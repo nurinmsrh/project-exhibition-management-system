@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "443376882672",
+    "project_id": "exhibition-management-sy-a3cf1",
+    "storage_bucket": "exhibition-management-sy-a3cf1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:443376882672:android:e762db6319b5499a53c335",
+        "android_client_info": {
+          "package_name": "com.exhibition.exhibition_management_system"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArWC-a-Duar5WzCyhuPdedV_tpCq2d5PU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

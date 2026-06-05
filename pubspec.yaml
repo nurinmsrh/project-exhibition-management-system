@@ -1,0 +1,39 @@
+name: exhibition_management_system
+description: A Flutter app for managing trade shows and exhibitions.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.6 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^2.15.1
+  firebase_auth: ^4.9.0
+  cloud_firestore: ^4.9.1
+
+  # State Management
+  provider: ^6.0.5
+
+  # Navigation
+  go_router: ^10.1.2
+
+  # Local Storage
+  shared_preferences: ^2.2.1
+
+  # UI
+  cached_network_image: ^3.3.0
+
+  # Utility
+  uuid: ^4.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
