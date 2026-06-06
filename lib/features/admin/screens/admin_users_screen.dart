@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/admin_provider.dart';
 import '../../../data/models/user_model.dart';
+import 'package:go_router/go_router.dart';
 
 class AdminUsersScreen extends StatefulWidget {
   const AdminUsersScreen({super.key});
@@ -185,7 +186,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
         elevation: 0.5,
         leading: IconButton(
           icon: const Icon(Icons.chevron_left, color: Color(0xFF185FA5)),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.go('/admin'),
         ),
         title: const Text(
           'Manage User Accounts',
@@ -260,8 +261,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           icon: Icons.person_outline,
           label: 'Total Users',
           value: totalUsers.toString(),
-          sub: 'vs. last month',
-          badge: '↑ 5.2%',
+          sub: '${activePercent.toStringAsFixed(0)}% · ${inactivePercent.toStringAsFixed(0)}%',
         ),
         _KpiCard(
           icon: Icons.person_add_outlined,
@@ -300,7 +300,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           setState(() => _currentPage = 1);
         },
         decoration: const InputDecoration(
-          hintText: 'Search by name, email, or phone...',
+          hintText: 'Search by name or email...',
           hintStyle: TextStyle(fontSize: 13, color: Color(0xFF6C757D)),
           prefixIcon: Icon(Icons.search, size: 20, color: Color(0xFF6C757D)),
           border: InputBorder.none,

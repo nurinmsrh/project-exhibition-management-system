@@ -28,12 +28,6 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
 
   Future<void> _logout() async {
     await context.read<AuthProvider>().logout();
-    if (!mounted) return;
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (route) => false,
-    );
   }
 
   @override

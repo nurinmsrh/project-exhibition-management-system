@@ -74,7 +74,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 color: Color(0xFF6C757D)),
             onPressed: () async {
               await authProvider.logout();
-              if (context.mounted) context.go('/');
             },
             tooltip: 'Logout',
           ),

@@ -54,7 +54,8 @@ class _AdminBoothsScreenState extends State<AdminBoothsScreen> {
           b.type.toLowerCase().contains(q);
       final matchTab = _selectedTab == 'All' ||
           (_selectedTab == 'Available' && b.status == 'available') ||
-          (_selectedTab == 'Booked' && b.status == 'booked');
+          (_selectedTab == 'Booked' &&
+              (b.status == 'booked' || b.status == 'reserved'));
       return matchSearch && matchTab;
     }).toList();
   }
@@ -353,8 +354,7 @@ class _AdminBoothsScreenState extends State<AdminBoothsScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    _buildStatusBadge(
-                        _exhibition?.status ?? 'upcoming'),
+                    _buildStatusBadge(_exhibition?.computedStatus ?? 'upcoming'),
                   ],
                 ),
                 const SizedBox(height: 5),
@@ -388,56 +388,6 @@ class _AdminBoothsScreenState extends State<AdminBoothsScreen> {
                           fontSize: 11, color: Color(0xFF6C757D)),
                     ),
                     const Spacer(),
-                    _ActionBtn(
-                      icon: Icons.edit_outlined,
-                      label: 'Edit',
-                      onTap: () => context.go(
-                          '/admin/exhibitions/${widget.exhibitionId}/edit'),
-                    ),
-                    _PipeDivider(),
-                    _ActionBtn(
-                      label: 'View',
-                      onTap: () {},
-                    ),
-                    _PipeDivider(),
-                    _ActionBtn(
-                      icon: Icons.delete_outline,
-                      label: 'Delete',
-                      color: const Color(0xFFDC3545),
-                      onTap: () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: const Text('Delete Exhibition'),
-                            content: Text(
-                                'Delete "${_exhibition?.title}"? This cannot be undone.'),
-                            actions: [
-                              TextButton(
-                                onPressed: () =>
-                                    Navigator.pop(ctx, false),
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () =>
-                                    Navigator.pop(ctx, true),
-                                style: TextButton.styleFrom(
-                                    foregroundColor: Colors.red),
-                                child: const Text('Delete'),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (confirm == true && mounted) {
-                          await context
-                              .read<AdminProvider>()
-                              .deleteExhibition(
-                              widget.exhibitionId);
-                          if (mounted) {
-                            context.go('/admin/exhibitions');
-                          }
-                        }
-                      },
-                    ),
                   ],
                 ),
               ],

@@ -21,15 +21,6 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
   final _exhibitDescController = TextEditingController();
   final List<String> _selectedAdditems = [];
 
-  final List<String> _availableAdditems = [
-    'Extra Furniture',
-    'Promotional Spot',
-    'Extended WiFi',
-    'Extra Power Outlets',
-    'Display Screen',
-    'Storage Space',
-  ];
-
   @override
   void dispose() {
     _companyNameController.dispose();
@@ -96,9 +87,7 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
         actions: [
           ElevatedButton(
             onPressed: () {
-              // Pop dialog
               Navigator.pop(context);
-              // Navigate to My Applications, clearing back stack to home
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(
@@ -127,6 +116,7 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ExhibitorProvider>();
+    final amenities = provider.selectedBoothsAmenities;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
@@ -318,15 +308,21 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
               const _SectionHeader(title: 'Additional Items'),
               const SizedBox(height: 4),
               const Text(
-                'Select any extra items you need (optional)',
+                'Select amenities you want to include (optional)',
                 style: TextStyle(fontSize: 12, color: Color(0xFF6C757D)),
               ),
               const SizedBox(height: 10),
               _SectionCard(
-                child: Wrap(
+                child: amenities.isEmpty
+                    ? const Text(
+                  'No amenities available for the selected booths.',
+                  style: TextStyle(
+                      fontSize: 13, color: Color(0xFF6C757D)),
+                )
+                    : Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: _availableAdditems.map((item) {
+                  children: amenities.map((item) {
                     final isSelected = _selectedAdditems.contains(item);
                     return GestureDetector(
                       onTap: () {

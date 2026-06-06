@@ -101,6 +101,18 @@ GoRouter createRouter(AuthProvider authProvider) {
           child: const AdminExhibitionFormScreen(),
         ),
       ),
+
+      GoRoute(
+        path: 'exhibitions/:id/booths',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return ChangeNotifierProvider(
+            create: (_) => AdminProvider(),
+            child: AdminBoothsScreen(exhibitionId: id),
+          );
+        },
+      ),
+
       GoRoute(
         path: '/admin/exhibitions/:id/edit',
         builder: (context, state) {

@@ -38,6 +38,15 @@ class ExhibitorProvider extends ChangeNotifier {
   double get totalSelectedPrice =>
       _selectedBooths.fold(0.0, (sum, b) => sum + b.price);
 
+  /// Unique amenities across all selected booths — shown in application form
+  List<String> get selectedBoothsAmenities {
+    final Set<String> amenities = {};
+    for (final booth in _selectedBooths) {
+      amenities.addAll(booth.amenities);
+    }
+    return amenities.toList();
+  }
+
   // ─── My Applications ───────────────────────────────────────────
   List<ApplicationModel> _applications = [];
   bool _isLoadingApplications = false;

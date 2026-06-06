@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class ExhibitionModel {
   final String id;
   final String title;
@@ -31,14 +33,28 @@ class ExhibitionModel {
       title: map['title'] ?? '',
       description: map['description'] ?? '',
       venue: map['venue'] ?? '',
-      startDate: (map['startDate'] as dynamic).toDate(),
-      endDate: (map['endDate'] as dynamic).toDate(),
+      startDate: _parseDate(map['startDate']),
+      endDate: _parseDate(map['endDate']),
       organizerId: map['organizerId'] ?? '',
       isPublished: map['isPublished'] ?? false,
       status: map['status'] ?? 'upcoming',
       floorPlanUrl: map['floorPlanUrl'] ?? '',
-      createdAt: (map['createdAt'] as dynamic).toDate(),
+      createdAt: _parseDate(map['createdAt']),
     );
+  }
+
+  // Handles both Timestamp and String date formats
+  static DateTime _parseDate(dynamic value) {
+    if (value == null) return DateTime.now();
+    if (value is Timestamp) return value.toDate();
+    if (value is String) {
+      try {
+        return DateTime.parse(value);
+      } catch (_) {
+        return DateTime.now();
+      }
+    }
+    return DateTime.now();
   }
 
   Map<String, dynamic> toMap() {

@@ -34,13 +34,6 @@ class _ExhibitorHomeScreenState extends State<ExhibitorHomeScreen> {
 
   void _logout(BuildContext context) async {
     await context.read<AuthProvider>().logout();
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-            (route) => false,
-      );
-    }
   }
 
   @override

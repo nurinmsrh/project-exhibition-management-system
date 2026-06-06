@@ -87,8 +87,13 @@ class AdminProvider extends ChangeNotifier {
     try {
       _exhibitions = await _exhibitionService.getAllExhibitions();
       _filteredExhibitions = _exhibitions;
+      print('=== EXHIBITIONS LOADED: ${_exhibitions.length}');
+      for (final e in _exhibitions) {
+        print('  - ${e.id} | ${e.title}');
+      }
     } catch (e) {
       _errorMessage = e.toString();
+      print('=== EXHIBITIONS ERROR: $e');
     }
     _isLoading = false;
     notifyListeners();
@@ -273,7 +278,7 @@ class AdminProvider extends ChangeNotifier {
   void searchApplications(String query) {
     _filteredApplications = _applications.where((a) {
       return a.companyName.toLowerCase().contains(query.toLowerCase()) ||
-          a.status.toLowerCase().contains(query.toLowerCase());
+          a.exhibitionId.toLowerCase().contains(query.toLowerCase());
     }).toList();
     notifyListeners();
   }
