@@ -278,7 +278,7 @@ class AdminProvider extends ChangeNotifier {
   void searchApplications(String query) {
     _filteredApplications = _applications.where((a) {
       return a.companyName.toLowerCase().contains(query.toLowerCase()) ||
-          a.exhibitionId.toLowerCase().contains(query.toLowerCase());
+          a.exhibitDescription.toLowerCase().contains(query.toLowerCase());
     }).toList();
     notifyListeners();
   }

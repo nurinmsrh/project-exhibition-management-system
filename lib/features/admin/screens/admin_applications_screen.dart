@@ -43,150 +43,160 @@ class _AdminApplicationsScreenState
 
   Color _statusBgColor(String status) {
     switch (status) {
-      case 'approved': return const Color(0xFFD4EDDA);
-      case 'pending':  return const Color(0xFFFFF3CD);
-      case 'rejected': return const Color(0xFFFCEBEB);
-      case 'cancelled': return const Color(0xFFE9ECEF);
-      default: return const Color(0xFFE9ECEF);
+      case 'approved':
+        return const Color(0xFFD4EDDA);
+      case 'pending':
+        return const Color(0xFFFFF3CD);
+      case 'rejected':
+        return const Color(0xFFFCEBEB);
+      case 'cancelled':
+        return const Color(0xFFE9ECEF);
+      default:
+        return const Color(0xFFE9ECEF);
     }
   }
 
   Color _statusTextColor(String status) {
     switch (status) {
-      case 'approved': return const Color(0xFF155724);
-      case 'pending':  return const Color(0xFF856404);
-      case 'rejected': return const Color(0xFF721C24);
-      case 'cancelled': return const Color(0xFF495057);
-      default: return const Color(0xFF495057);
+      case 'approved':
+        return const Color(0xFF155724);
+      case 'pending':
+        return const Color(0xFF856404);
+      case 'rejected':
+        return const Color(0xFF721C24);
+      case 'cancelled':
+        return const Color(0xFF495057);
+      default:
+        return const Color(0xFF495057);
     }
   }
 
-  Future<void> _updateStatus(
-      BuildContext context,
+  Future<void> _updateStatus(BuildContext context,
       ApplicationModel application,
-      String newStatus,
-      ) async {
+      String newStatus,) async {
     String reason = '';
 
     if (newStatus == 'rejected' || newStatus == 'cancelled') {
       final reasonController = TextEditingController();
       final confirmed = await showDialog<bool>(
         context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
-          title: Text(
-            newStatus == 'rejected'
-                ? 'Reject Application'
-                : 'Cancel Booking',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1A1C1E),
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
+        builder: (ctx) =>
+            AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              title: Text(
                 newStatus == 'rejected'
-                    ? 'Please provide a reason for rejection:'
-                    : 'Please provide a reason for cancellation:',
+                    ? 'Reject Application'
+                    : 'Cancel Booking',
                 style: const TextStyle(
-                    fontSize: 13, color: Color(0xFF6C757D)),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: reasonController,
-                maxLines: 3,
-                style: const TextStyle(fontSize: 13),
-                decoration: InputDecoration(
-                  hintText: 'Enter reason...',
-                  hintStyle: const TextStyle(
-                      fontSize: 13, color: Color(0xFF8E8E93)),
-                  contentPadding: const EdgeInsets.all(12),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(
-                        color: Color(0xFFDEE2E6)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(
-                        color: Color(0xFFDEE2E6)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(
-                        color: Color(0xFF185FA5), width: 1.5),
-                  ),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A1C1E),
                 ),
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel',
-                  style: TextStyle(color: Color(0xFF6C757D))),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFDC3545),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    newStatus == 'rejected'
+                        ? 'Please provide a reason for rejection:'
+                        : 'Please provide a reason for cancellation:',
+                    style: const TextStyle(
+                        fontSize: 13, color: Color(0xFF6C757D)),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: reasonController,
+                    maxLines: 3,
+                    style: const TextStyle(fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: 'Enter reason...',
+                      hintStyle: const TextStyle(
+                          fontSize: 13, color: Color(0xFF8E8E93)),
+                      contentPadding: const EdgeInsets.all(12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                            color: Color(0xFFDEE2E6)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                            color: Color(0xFFDEE2E6)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF185FA5), width: 1.5),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              child: Text(newStatus == 'rejected'
-                  ? 'Reject'
-                  : 'Cancel Booking'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancel',
+                      style: TextStyle(color: Color(0xFF6C757D))),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFDC3545),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Text(newStatus == 'rejected'
+                      ? 'Reject'
+                      : 'Cancel Booking'),
+                ),
+              ],
             ),
-          ],
-        ),
       );
       if (confirmed != true) return;
       reason = reasonController.text.trim();
     } else {
       final confirmed = await showDialog<bool>(
         context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
-          title: const Text(
-            'Approve Application',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1A1C1E),
-            ),
-          ),
-          content: const Text(
-            'Are you sure you want to approve this application?',
-            style: TextStyle(
-                fontSize: 13, color: Color(0xFF6C757D)),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel',
-                  style: TextStyle(color: Color(0xFF6C757D))),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1D9E75),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+        builder: (ctx) =>
+            AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              title: const Text(
+                'Approve Application',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A1C1E),
+                ),
               ),
-              child: const Text('Approve'),
+              content: const Text(
+                'Are you sure you want to approve this application?',
+                style: TextStyle(
+                    fontSize: 13, color: Color(0xFF6C757D)),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancel',
+                      style: TextStyle(color: Color(0xFF6C757D))),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1D9E75),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Approve'),
+                ),
+              ],
             ),
-          ],
-        ),
       );
       if (confirmed != true) return;
     }
@@ -497,8 +507,9 @@ class _AdminApplicationsScreenState
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => _updateStatus(
-                          context, application, 'approved'),
+                      onPressed: () =>
+                          _updateStatus(
+                              context, application, 'approved'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF1D9E75),
                         foregroundColor: Colors.white,
@@ -518,8 +529,9 @@ class _AdminApplicationsScreenState
                   const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => _updateStatus(
-                          context, application, 'rejected'),
+                      onPressed: () =>
+                          _updateStatus(
+                              context, application, 'rejected'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFFDC3545),
                         side: const BorderSide(
@@ -547,8 +559,9 @@ class _AdminApplicationsScreenState
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () => _updateStatus(
-                      context, application, 'cancelled'),
+                  onPressed: () =>
+                      _updateStatus(
+                          context, application, 'cancelled'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFFDC3545),
                     side:

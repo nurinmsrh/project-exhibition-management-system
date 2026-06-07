@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/admin_provider.dart';
 import '../../../data/models/booth_model.dart';
 import '../../../data/models/exhibition_model.dart';
+import '../admin_bottom_nav.dart';
 
 class AdminBoothsScreen extends StatefulWidget {
   final String exhibitionId;
@@ -20,6 +21,9 @@ class _AdminBoothsScreenState extends State<AdminBoothsScreen> {
   int _currentPage = 1;
   final int _pageSize = 6;
   ExhibitionModel? _exhibition;
+  String formatBoothType(String type) {
+    return type[0].toUpperCase() + type.substring(1).toLowerCase();
+  }
 
   @override
   void initState() {
@@ -198,7 +202,10 @@ class _AdminBoothsScreenState extends State<AdminBoothsScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(context),
+      bottomNavigationBar: AdminBottomNav(
+        currentRoute: '/admin/exhibitions',
+        pendingCount: 0,
+      ),
     );
   }
 
@@ -653,23 +660,48 @@ class _AdminBoothsScreenState extends State<AdminBoothsScreen> {
                 child: Row(
                   children: const [
                     SizedBox(
-                        width: 48,
-                        child: Text('Booth ID',
-                            style: _headerStyle)),
+                      width: 48,
+                      child: Text(
+                        'Booth ID',
+                        style: _headerStyle,
+                      ),
+                    ),
                     SizedBox(width: 8),
+
                     SizedBox(
-                        width: 56,
-                        child:
-                        Text('Type', style: _headerStyle)),
+                      width: 56,
+                      child: Text(
+                        'Type',
+                        style: _headerStyle,
+                      ),
+                    ),
                     SizedBox(width: 8),
+
                     SizedBox(
-                        width: 48,
-                        child:
-                        Text('Size', style: _headerStyle)),
+                      width: 60,
+                      child: Text(
+                        'Status',
+                        style: _headerStyle,
+                      ),
+                    ),
                     SizedBox(width: 8),
+
+                    SizedBox(
+                      width: 48,
+                      child: Text(
+                        'Size',
+                        style: _headerStyle,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+
                     Expanded(
-                        child: Text('XY Coords',
-                            style: _headerStyle)),
+                      child: Text(
+                        'XY Cords',
+                        style: _headerStyle,
+                      ),
+                    ),
+
                     SizedBox(width: 40),
                   ],
                 ),
@@ -705,10 +737,10 @@ class _AdminBoothsScreenState extends State<AdminBoothsScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 12, vertical: 9),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           child: Row(
             children: [
+              // Booth ID
               SizedBox(
                 width: 48,
                 child: Text(
@@ -720,7 +752,10 @@ class _AdminBoothsScreenState extends State<AdminBoothsScreen> {
                   ),
                 ),
               ),
+
               const SizedBox(width: 8),
+
+              // Type
               SizedBox(
                 width: 56,
                 child: Row(
@@ -735,40 +770,73 @@ class _AdminBoothsScreenState extends State<AdminBoothsScreen> {
                     ),
                     const SizedBox(width: 4),
                     Flexible(
-                      child: Text(booth.type,
-                          style:
-                          const TextStyle(fontSize: 11)),
+                      child: Text(
+                        booth.type,
+                        style: const TextStyle(fontSize: 11),
+                      ),
                     ),
                   ],
                 ),
               ),
+
               const SizedBox(width: 8),
+
+              // Status
+              SizedBox(
+                width: 60,
+                child: Text(
+                  booth.status,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: _boothStatusColor(booth.status),
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 8),
+
+              // Size
               SizedBox(
                 width: 48,
-                child: Text(booth.size,
-                    style: const TextStyle(fontSize: 11)),
+                child: Text(
+                  booth.size,
+                  style: const TextStyle(fontSize: 11),
+                ),
               ),
+
               const SizedBox(width: 8),
+
+              // XY coords
               Expanded(
                 child: Text(
                   '(${booth.positionX.toInt()}, ${booth.positionY.toInt()})',
                   style: const TextStyle(
-                      fontSize: 11, color: Color(0xFF6C757D)),
+                    fontSize: 11,
+                    color: Color(0xFF6C757D),
+                  ),
                 ),
               ),
+
+              // Actions
               SizedBox(
                 width: 40,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     GestureDetector(
-                      onTap: () => context.go(
-                          '/admin/exhibitions/${widget.exhibitionId}/booths/${booth.id}/edit'),
-                      child: const Text(
+                      onTap: booth.status == 'available'
+                          ? () => context.go(
+                        '/admin/exhibitions/${widget.exhibitionId}/booths/${booth.id}/edit',
+                      )
+                          : null,
+                      child: Text(
                         'Edit',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Color(0xFF185FA5),
+                          color: booth.status == 'available'
+                              ? const Color(0xFF185FA5)
+                              : const Color(0xFFCED4DA),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -776,8 +844,11 @@ class _AdminBoothsScreenState extends State<AdminBoothsScreen> {
                     const SizedBox(width: 6),
                     GestureDetector(
                       onTap: () => _deleteBooth(booth),
-                      child: const Icon(Icons.delete_outline,
-                          size: 14, color: Color(0xFFDC3545)),
+                      child: const Icon(
+                        Icons.delete_outline,
+                        size: 14,
+                        color: Color(0xFFDC3545),
+                      ),
                     ),
                   ],
                 ),
@@ -831,51 +902,6 @@ class _AdminBoothsScreenState extends State<AdminBoothsScreen> {
               fontSize: 11, color: Color(0xFF6C757D)),
         ),
       ],
-    );
-  }
-
-  // ── BOTTOM NAV ───────────────────────────────────────────
-  Widget _buildBottomNav(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border:
-        Border(top: BorderSide(color: Color(0xFFDEE2E6))),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavItem(
-                icon: Icons.home_outlined,
-                label: 'Dashboard',
-                onTap: () => context.go('/admin'),
-              ),
-              _NavItem(
-                icon: Icons.calendar_today_outlined,
-                label: 'Events',
-                isActive: true,
-                onTap: () =>
-                    context.go('/admin/exhibitions'),
-              ),
-              _NavItem(
-                icon: Icons.description_outlined,
-                label: 'Applications',
-                onTap: () =>
-                    context.go('/admin/applications'),
-              ),
-              _NavItem(
-                icon: Icons.grid_view_outlined,
-                label: 'Users',
-                onTap: () =>
-                    context.go('/admin/users'),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 

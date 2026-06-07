@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/admin_provider.dart';
 import '../../../data/models/booth_model.dart';
+import '../admin_bottom_nav.dart';
 
 class AdminBoothTypesScreen extends StatefulWidget {
   const AdminBoothTypesScreen({super.key});
@@ -219,8 +220,10 @@ class _AdminBoothTypesScreenState
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(context),
-    );
+      bottomNavigationBar: AdminBottomNav(
+        currentRoute: '/admin/',
+        pendingCount: _pendingCount,
+      ),    );
   }
 
   // ── INFO BANNER ──────────────────────────────────────────
@@ -559,73 +562,6 @@ class _AdminBoothTypesScreenState
           color: isPublished
               ? const Color(0xFF155724)
               : const Color(0xFF495057),
-        ),
-      ),
-    );
-  }
-
-  // ── BOTTOM NAV ───────────────────────────────────────────
-  Widget _buildBottomNav(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border:
-        Border(top: BorderSide(color: Color(0xFFDEE2E6))),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavItem(
-                icon: Icons.home_outlined,
-                label: 'Dashboard',
-                onTap: () => context.go('/admin'),
-              ),
-              _NavItem(
-                icon: Icons.calendar_today_outlined,
-                label: 'Events',
-                onTap: () =>
-                    context.go('/admin/exhibitions'),
-              ),
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  _NavItem(
-                    icon: Icons.description_outlined,
-                    label: 'Applications',
-                    onTap: () =>
-                        context.go('/admin/applications'),
-                  ),
-                  if (_pendingCount > 0)
-                    Positioned(
-                      top: -2,
-                      right: 4,
-                      child: Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFDC3545),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          '$_pendingCount',
-                          style: const TextStyle(
-                              fontSize: 9,
-                              color: Colors.white),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              _NavItem(
-                icon: Icons.grid_view_outlined,
-                label: 'Booth Types',
-                isActive: true,
-                onTap: () {},
-              ),
-            ],
-          ),
         ),
       ),
     );

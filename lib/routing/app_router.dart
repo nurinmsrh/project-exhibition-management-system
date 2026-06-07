@@ -103,17 +103,6 @@ GoRouter createRouter(AuthProvider authProvider) {
       ),
 
       GoRoute(
-        path: 'exhibitions/:id/booths',
-        builder: (context, state) {
-          final id = state.pathParameters['id']!;
-          return ChangeNotifierProvider(
-            create: (_) => AdminProvider(),
-            child: AdminBoothsScreen(exhibitionId: id),
-          );
-        },
-      ),
-
-      GoRoute(
         path: '/admin/exhibitions/:id/edit',
         builder: (context, state) {
           final id = state.pathParameters['id']!;
@@ -143,6 +132,23 @@ GoRouter createRouter(AuthProvider authProvider) {
           );
         },
       ),
+
+      GoRoute(
+        path: '/admin/exhibitions/:id/booths/:boothId/edit',
+        builder: (context, state) {
+          final exhibitionId = state.pathParameters['id']!;
+          final boothId = state.pathParameters['boothId']!;
+
+          return ChangeNotifierProvider(
+            create: (_) => AdminProvider(),
+            child: AdminBoothFormScreen(
+              exhibitionId: exhibitionId,
+              boothId: boothId,
+            ),
+          );
+        },
+      ),
+
       GoRoute(
         path: '/admin/applications',
         builder: (context, state) => ChangeNotifierProvider(

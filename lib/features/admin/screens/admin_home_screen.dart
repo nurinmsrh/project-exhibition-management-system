@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/admin_provider.dart';
+import '../admin_bottom_nav.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -93,8 +94,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(context),
-    );
+      bottomNavigationBar: AdminBottomNav(
+        currentRoute: '/admin',
+        pendingCount: 0,
+      ),    );
   }
 
   // ── WELCOME BANNER ───────────────────────────────────────
@@ -195,72 +198,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     );
   }
 
-  // ── BOTTOM NAV ───────────────────────────────────────────
-  Widget _buildBottomNav(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border:
-        Border(top: BorderSide(color: Color(0xFFDEE2E6))),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavItem(
-                icon: Icons.home_outlined,
-                label: 'Dashboard',
-                isActive: true,
-                onTap: () {},
-              ),
-              _NavItem(
-                icon: Icons.calendar_today_outlined,
-                label: 'Events',
-                onTap: () =>
-                    context.go('/admin/exhibitions'),
-              ),
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  _NavItem(
-                    icon: Icons.description_outlined,
-                    label: 'Applications',
-                    onTap: () =>
-                        context.go('/admin/applications'),
-                  ),
-                  if (_pendingApplications > 0)
-                    Positioned(
-                      top: -2,
-                      right: 4,
-                      child: Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFDC3545),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          '$_pendingApplications',
-                          style: const TextStyle(
-                              fontSize: 9,
-                              color: Colors.white),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              _NavItem(
-                icon: Icons.people_outline,
-                label: 'Users',
-                onTap: () => context.go('/admin/users'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   String _initials(String name) {
     final parts = name.trim().split(' ');
