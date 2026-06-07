@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../data/models/exhibition_model.dart';
 import '../../../data/models/booth_model.dart';
 import '../../../data/services/booth_service.dart';
@@ -83,12 +84,14 @@ class _GuestExhibitionDetailScreenState
         return const Color(0xFF1D9E75);
       case 'booked':
         return const Color(0xFFDC3545);
-      case 'reserved':
-        return const Color(0xFFEF9F27);
       case 'unavailable':
       default:
         return const Color(0xFF6C757D);
     }
+  }
+
+  void _navigateToAuth(BuildContext context, String route) {
+    context.push(route);
   }
 
   @override
@@ -231,51 +234,46 @@ class _GuestExhibitionDetailScreenState
                     children: [
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const RegisterScreen()),
-                          ),
+                          onPressed: () => context.push('/register'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF185FA5),
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8)),
-                            padding:
-                            const EdgeInsets.symmetric(vertical: 10),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
                           ),
-                          child: const Text('Register',
-                              style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600)),
+                          child: const Text(
+                            'Register',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
                         ),
                       ),
+
                       const SizedBox(width: 8),
+
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const LoginScreen()),
-                          ),
+                          onPressed: () => context.push('/login'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFF185FA5),
-                            side: const BorderSide(
-                                color: Color(0xFF185FA5)),
+                            side: const BorderSide(color: Color(0xFF185FA5)),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8)),
-                            padding:
-                            const EdgeInsets.symmetric(vertical: 10),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
                           ),
-                          child: const Text('Login',
-                              style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600)),
+                          child: const Text(
+                            'Login',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
                         ),
                       ),
                     ],
                   ),
+
+                  const SizedBox(height: 8),
                 ],
               ),
             ),
@@ -313,11 +311,7 @@ class _GuestExhibitionDetailScreenState
                       _LegendItem(
                           color: Color(0xFF1D9E75), label: 'Available'),
                       _LegendItem(
-                          color: Color(0xFFEF9F27), label: 'Reserved'),
-                      _LegendItem(
                           color: Color(0xFFDC3545), label: 'Booked'),
-                      _LegendItem(
-                          color: Color(0xFF6C757D), label: 'Unavailable'),
                     ],
                   ),
                   const SizedBox(height: 16),

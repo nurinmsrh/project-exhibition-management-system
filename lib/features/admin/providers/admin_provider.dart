@@ -208,7 +208,7 @@ class AdminProvider extends ChangeNotifier {
     required String type,
     required String size,
     required double price,
-    required List<String> amenities,
+    required List<Map<String, dynamic>> amenities,
     required double positionX,
     required double positionY,
     double width = 50,

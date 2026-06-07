@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/exhibitor_home_screen.dart';
-import 'screens/my_applications_screen.dart';
-import 'providers/exhibitor_provider.dart';
-import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 
 class ExhibitorBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -31,15 +28,7 @@ class ExhibitorBottomNav extends StatelessWidget {
                 isActive: currentIndex == 0,
                 onTap: () {
                   if (currentIndex == 0) return;
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChangeNotifierProvider(
-                        create: (_) => ExhibitorProvider(),
-                        child: const ExhibitorHomeScreen(),
-                      ),
-                    ),
-                  );
+                  context.go('/exhibitor');
                 },
               ),
               _NavItem(
@@ -48,15 +37,7 @@ class ExhibitorBottomNav extends StatelessWidget {
                 isActive: currentIndex == 1,
                 onTap: () {
                   if (currentIndex == 1) return;
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChangeNotifierProvider(
-                        create: (_) => ExhibitorProvider(),
-                        child: const MyApplicationsScreen(),
-                      ),
-                    ),
-                  );
+                  context.go('/exhibitor/applications');
                 },
               ),
             ],
@@ -99,8 +80,7 @@ class _NavItem extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 10,
-              fontWeight:
-              isActive ? FontWeight.w700 : FontWeight.w400,
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
               color: isActive
                   ? const Color(0xFF185FA5)
                   : const Color(0xFF6C757D),

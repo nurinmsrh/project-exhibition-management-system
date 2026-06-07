@@ -21,7 +21,7 @@ class ExhibitorProvider extends ChangeNotifier {
   bool get isLoadingExhibitions => _isLoadingExhibitions;
   String get exhibitionsError => _exhibitionsError;
 
-  // ─── Booths (per exhibition) ────────────────────────────────────
+  // ─── Booths ────────────────────────────────────────────────────
   List<BoothModel> _booths = [];
   bool _isLoadingBooths = false;
   String _boothsError = '';
@@ -33,19 +33,44 @@ class ExhibitorProvider extends ChangeNotifier {
   // ─── Booth selection ───────────────────────────────────────────
   final List<BoothModel> _selectedBooths = [];
   List<BoothModel> get selectedBooths => List.unmodifiable(_selectedBooths);
-  List<String> get selectedBoothIds => _selectedBooths.map((b) => b.id).toList();
+  List<String> get selectedBoothIds =>
+      _selectedBooths.map((b) => b.id).toList();
 
-  double get totalSelectedPrice =>
+  // ─── Selected amenities ────────────────────────────────────────
+  // Stores amenity names the exhibitor opted into
+  final List<String> _selectedAmenityNames = [];
+  List<String> get selectedAmenityNames =>
+      List.unmodifiable(_selectedAmenityNames);
+
+  /// Unique amenities across all selected booths (with prices)
+  List<BoothAmenity> get selectedBoothsAmenities {
+    final Map<String, BoothAmenity> unique = {};
+    for (final booth in _selectedBooths) {
+      for (final amenity in booth.amenities) {
+        unique[amenity.name] = amenity;
+      }
+    }
+    return unique.values.toList();
+  }
+
+  /// Total price of selected amenities
+  double get selectedAmenitiesPrice {
+    double total = 0;
+    for (final amenity in selectedBoothsAmenities) {
+      if (_selectedAmenityNames.contains(amenity.name)) {
+        total += amenity.price;
+      }
+    }
+    return total;
+  }
+
+  /// Base price of selected booths only
+  double get selectedBoothsBasePrice =>
       _selectedBooths.fold(0.0, (sum, b) => sum + b.price);
 
-  /// Unique amenities across all selected booths — shown in application form
-  List<String> get selectedBoothsAmenities {
-    final Set<String> amenities = {};
-    for (final booth in _selectedBooths) {
-      amenities.addAll(booth.amenities);
-    }
-    return amenities.toList();
-  }
+  /// Grand total = booth base prices + selected amenity prices
+  double get totalSelectedPrice =>
+      selectedBoothsBasePrice + selectedAmenitiesPrice;
 
   // ─── My Applications ───────────────────────────────────────────
   List<ApplicationModel> _applications = [];
@@ -94,6 +119,7 @@ class ExhibitorProvider extends ChangeNotifier {
     _boothsError = '';
     _booths = [];
     _selectedBooths.clear();
+    _selectedAmenityNames.clear();
     notifyListeners();
 
     try {
@@ -158,6 +184,8 @@ class ExhibitorProvider extends ChangeNotifier {
     final idx = _selectedBooths.indexWhere((b) => b.id == booth.id);
     if (idx >= 0) {
       _selectedBooths.removeAt(idx);
+      // Remove amenities that no longer belong to any selected booth
+      _cleanUpAmenities();
     } else {
       _selectedBooths.add(booth);
     }
@@ -169,25 +197,46 @@ class ExhibitorProvider extends ChangeNotifier {
 
   void clearSelectedBooths() {
     _selectedBooths.clear();
+    _selectedAmenityNames.clear();
     notifyListeners();
   }
 
   // ══════════════════════════════════════════════════════════════════
-  // BOOTH COLOR (floor plan)
+  // AMENITY SELECTION
+  // ══════════════════════════════════════════════════════════════════
+
+  void toggleAmenitySelection(String amenityName) {
+    if (_selectedAmenityNames.contains(amenityName)) {
+      _selectedAmenityNames.remove(amenityName);
+    } else {
+      _selectedAmenityNames.add(amenityName);
+    }
+    notifyListeners();
+  }
+
+  bool isAmenitySelected(String amenityName) =>
+      _selectedAmenityNames.contains(amenityName);
+
+  /// Remove selected amenities that no longer exist in any selected booth
+  void _cleanUpAmenities() {
+    final available = selectedBoothsAmenities.map((a) => a.name).toSet();
+    _selectedAmenityNames.removeWhere((name) => !available.contains(name));
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // BOOTH COLOR
   // ══════════════════════════════════════════════════════════════════
 
   Color boothColor(BoothModel booth) {
-    if (isBoothSelected(booth.id)) return const Color(0xFF185FA5); // blue
+    if (isBoothSelected(booth.id)) return const Color(0xFF185FA5);
     switch (booth.status) {
       case 'available':
-        return const Color(0xFF1D9E75); // green
+        return const Color(0xFF1D9E75);
       case 'booked':
-        return const Color(0xFFDC3545); // red
       case 'reserved':
-        return const Color(0xFFEF9F27); // orange
       case 'unavailable':
       default:
-        return const Color(0xFF6C757D); // gray
+        return const Color(0xFFDC3545);
     }
   }
 
@@ -195,15 +244,12 @@ class ExhibitorProvider extends ChangeNotifier {
   // ACTIONS
   // ══════════════════════════════════════════════════════════════════
 
-  /// Submit application — booths become 'reserved' (not 'booked').
-  /// 'booked' only happens after organizer/admin approves.
   Future<bool> submitApplication({
     required String exhibitorId,
     required String exhibitionId,
     required String companyName,
     required String companyDescription,
     required String exhibitDescription,
-    required List<String> additems,
   }) async {
     if (_selectedBooths.isEmpty) {
       _actionError = 'Please select at least one booth.';
@@ -226,17 +272,16 @@ class ExhibitorProvider extends ChangeNotifier {
         companyName: companyName,
         companyDescription: companyDescription,
         exhibitDescription: exhibitDescription,
-        additems: additems,
+        additems: List<String>.from(_selectedAmenityNames),
       );
 
-      // Mark booths as 'reserved' — NOT 'booked'
-      // 'booked' is set by organizer/admin on approval per data flow rules
       for (final booth in _selectedBooths) {
         await _boothService.updateBoothStatus(booth.id, 'reserved');
       }
 
       _actionSuccess = 'Application submitted successfully!';
       _selectedBooths.clear();
+      _selectedAmenityNames.clear();
       _isSubmitting = false;
       notifyListeners();
       return true;
@@ -259,7 +304,6 @@ class ExhibitorProvider extends ChangeNotifier {
       await _applicationService.updateApplication(applicationId, data);
       _actionSuccess = 'Application updated successfully!';
 
-      // Refresh list using stored exhibitorId
       if (_applications.isNotEmpty) {
         await loadApplications(_applications.first.exhibitorId);
       }

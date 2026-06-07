@@ -151,7 +151,7 @@ class OrganizerProvider extends ChangeNotifier {
     required String type,
     required String size,
     required double price,
-    List<String> amenities = const [],
+    List<Map<String, dynamic>> amenities = const [],
     double positionX = 0,
     double positionY = 0,
     double width = 80,

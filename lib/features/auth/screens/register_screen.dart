@@ -44,7 +44,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
 
     if (success && mounted) {
-      if (_selectedRole == 'organizer') {
+      final role = _selectedRole;
+
+      if (role == 'organizer') {
         context.go('/organizer');
       } else {
         context.go('/exhibitor');
@@ -212,6 +214,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: const Text('Login'),
                     ),
                   ],
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: TextButton(
+                    onPressed: () => context.go('/'),
+                    child: const Text('Continue as Guest'),
+                  ),
                 ),
               ],
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../data/models/exhibition_model.dart';
 import '../../../data/services/exhibition_service.dart';
 import '../../auth/screens/login_screen.dart';
@@ -73,17 +74,11 @@ class _GuestHomeScreenState extends State<GuestHomeScreen> {
   }
 
   void _navigateToLogin() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
+    context.push('/login');
   }
 
   void _navigateToRegister() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const RegisterScreen()),
-    );
+    context.push('/register');
   }
 
   @override
@@ -157,17 +152,6 @@ class _GuestHomeScreenState extends State<GuestHomeScreen> {
                           fontSize: 13, color: Color(0xFF6C757D)),
                     ),
                     const SizedBox(width: 4),
-                    GestureDetector(
-                      onTap: _navigateToRegister,
-                      child: const Text(
-                        'Sign up free →',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF185FA5),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ],
@@ -468,7 +452,7 @@ class _ExhibitionCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
+                  child: ElevatedButton(
                     onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -477,39 +461,26 @@ class _ExhibitionCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF185FA5),
-                      side: const BorderSide(color: Color(0xFF185FA5)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF185FA5),
+                      foregroundColor: Colors.white,
+                      elevation: 2,
+                      shadowColor: const Color(0xFF185FA5).withOpacity(0.3),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
                     child: const Text(
                       'View Details',
                       style: TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w500),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: onLoginTap,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF185FA5),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    child: const Text(
-                      'Login to Book',
-                      style: TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                ),
               ],
             ),
           ],

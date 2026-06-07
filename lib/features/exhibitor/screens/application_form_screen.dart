@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../providers/exhibitor_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../data/models/exhibition_model.dart';
-import 'my_applications_screen.dart';
+import '../../../data/models/booth_model.dart';
 
 class ApplicationFormScreen extends StatefulWidget {
   final ExhibitionModel exhibition;
@@ -19,7 +20,6 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
   final _companyNameController = TextEditingController();
   final _companyDescController = TextEditingController();
   final _exhibitDescController = TextEditingController();
-  final List<String> _selectedAdditems = [];
 
   @override
   void dispose() {
@@ -41,7 +41,6 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
       companyName: _companyNameController.text.trim(),
       companyDescription: _companyDescController.text.trim(),
       exhibitDescription: _exhibitDescController.text.trim(),
-      additems: List<String>.from(_selectedAdditems),
     );
 
     if (!mounted) return;
@@ -69,12 +68,14 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
           children: [
             Icon(Icons.check_circle, color: Color(0xFF1D9E75), size: 22),
             SizedBox(width: 8),
-            Text(
-              'Application Submitted!',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1A1C1E),
+            Flexible(
+              child: Text(
+                'Application Submitted!',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A1C1E),
+                ),
               ),
             ),
           ],
@@ -88,16 +89,7 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChangeNotifierProvider(
-                    create: (_) => ExhibitorProvider(),
-                    child: const MyApplicationsScreen(),
-                  ),
-                ),
-                    (route) => false,
-              );
+              context.go('/exhibitor/applications');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF185FA5),
@@ -184,7 +176,7 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
               ),
               const SizedBox(height: 12),
 
-              // ── Selected Booths Summary ─────────────────────────
+              // ── Selected Booths + Price Summary ─────────────────
               _SectionCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,7 +212,7 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            booth.boothNumber,
+                            '${booth.boothNumber}  RM ${booth.price.toStringAsFixed(2)}',
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
@@ -232,22 +224,38 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
                     ),
                     const SizedBox(height: 12),
                     const Divider(color: Color(0xFFDEE2E6), height: 1),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
+
+                    // Price breakdown
+                    _PriceRow(
+                      label: 'Booth(s) subtotal',
+                      value: provider.selectedBoothsBasePrice,
+                    ),
+                    if (provider.selectedAmenitiesPrice > 0) ...[
+                      const SizedBox(height: 4),
+                      _PriceRow(
+                        label: 'Amenities subtotal',
+                        value: provider.selectedAmenitiesPrice,
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    const Divider(color: Color(0xFFDEE2E6), height: 1),
+                    const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Total Price',
+                          'Total',
                           style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
                             color: Color(0xFF1A1C1E),
                           ),
                         ),
                         Text(
                           'RM ${provider.totalSelectedPrice.toStringAsFixed(2)}',
                           style: const TextStyle(
-                            fontSize: 15,
+                            fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF185FA5),
                           ),
@@ -304,11 +312,11 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
               ),
               const SizedBox(height: 20),
 
-              // ── Additional Items ────────────────────────────────
-              const _SectionHeader(title: 'Additional Items'),
+              // ── Amenities ───────────────────────────────────────
+              const _SectionHeader(title: 'Amenities'),
               const SizedBox(height: 4),
               const Text(
-                'Select amenities you want to include (optional)',
+                'Select amenities to add to your booking (optional)',
                 style: TextStyle(fontSize: 12, color: Color(0xFF6C757D)),
               ),
               const SizedBox(height: 10),
@@ -319,29 +327,22 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
                   style: TextStyle(
                       fontSize: 13, color: Color(0xFF6C757D)),
                 )
-                    : Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: amenities.map((item) {
-                    final isSelected = _selectedAdditems.contains(item);
+                    : Column(
+                  children: amenities.map((amenity) {
+                    final isSelected =
+                    provider.isAmenitySelected(amenity.name);
                     return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          if (isSelected) {
-                            _selectedAdditems.remove(item);
-                          } else {
-                            _selectedAdditems.add(item);
-                          }
-                        });
-                      },
+                      onTap: () => provider
+                          .toggleAmenitySelection(amenity.name),
                       child: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 7),
+                            horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? const Color(0xFF185FA5)
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(20),
+                              ? const Color(0xFFCCE5FF)
+                              : const Color(0xFFF8F9FA),
+                          borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color: isSelected
                                 ? const Color(0xFF185FA5)
@@ -349,20 +350,36 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
                           ),
                         ),
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (isSelected) ...[
-                              const Icon(Icons.check,
-                                  size: 13, color: Colors.white),
-                              const SizedBox(width: 4),
-                            ],
+                            Icon(
+                              isSelected
+                                  ? Icons.check_box
+                                  : Icons.check_box_outline_blank,
+                              size: 18,
+                              color: isSelected
+                                  ? const Color(0xFF185FA5)
+                                  : const Color(0xFF6C757D),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                amenity.name,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: isSelected
+                                      ? const Color(0xFF004085)
+                                      : const Color(0xFF1A1C1E),
+                                ),
+                              ),
+                            ),
                             Text(
-                              item,
+                              '+ RM ${amenity.price.toStringAsFixed(2)}',
                               style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
                                 color: isSelected
-                                    ? Colors.white
+                                    ? const Color(0xFF185FA5)
                                     : const Color(0xFF6C757D),
                               ),
                             ),
@@ -418,6 +435,33 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
 // ─────────────────────────────────────────────────────────────────
 // Helper Widgets
 // ─────────────────────────────────────────────────────────────────
+
+class _PriceRow extends StatelessWidget {
+  final String label;
+  final double value;
+  const _PriceRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 13, color: Color(0xFF6C757D)),
+        ),
+        Text(
+          'RM ${value.toStringAsFixed(2)}',
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF1A1C1E),
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class _SectionHeader extends StatelessWidget {
   final String title;

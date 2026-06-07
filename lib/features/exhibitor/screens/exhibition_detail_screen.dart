@@ -204,11 +204,7 @@ class _ExhibitionDetailScreenState extends State<ExhibitionDetailScreen> {
                       _LegendItem(
                           color: Color(0xFF185FA5), label: 'Selected'),
                       _LegendItem(
-                          color: Color(0xFFEF9F27), label: 'Reserved'),
-                      _LegendItem(
                           color: Color(0xFFDC3545), label: 'Booked'),
-                      _LegendItem(
-                          color: Color(0xFF6C757D), label: 'Unavailable'),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -250,85 +246,13 @@ class _ExhibitionDetailScreenState extends State<ExhibitionDetailScreen> {
                       : _FloorPlanCanvas(
                     booths: provider.booths,
                     provider: provider,
+                    exhibition: widget.exhibition,
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 80), // space for bottom bar
           ],
-        ),
-      ),
-
-      // ── Bottom Action Bar ─────────────────────────────────────
-      bottomNavigationBar: provider.selectedBooths.isEmpty
-          ? null
-          : Container(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(
-              top: BorderSide(color: Color(0xFFDEE2E6))),
-        ),
-        child: SafeArea(
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${provider.selectedBooths.length} booth${provider.selectedBooths.length > 1 ? 's' : ''} selected',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1A1C1E),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Total: RM ${provider.totalSelectedPrice.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF185FA5),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChangeNotifierProvider.value(
-                        value: context.read<ExhibitorProvider>(),
-                        child: ApplicationFormScreen(
-                          exhibition: widget.exhibition,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF185FA5),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 24, vertical: 12),
-                ),
-                child: const Text(
-                  'Apply Now',
-                  style: TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w500),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -342,8 +266,13 @@ class _ExhibitionDetailScreenState extends State<ExhibitionDetailScreen> {
 class _FloorPlanCanvas extends StatelessWidget {
   final List<BoothModel> booths;
   final ExhibitorProvider provider;
+  final ExhibitionModel exhibition;
 
-  const _FloorPlanCanvas({required this.booths, required this.provider});
+  const _FloorPlanCanvas({
+    required this.booths,
+    required this.provider,
+    required this.exhibition,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -382,6 +311,7 @@ class _FloorPlanCanvas extends StatelessWidget {
                   child: _BoothTile(
                     booth: booth,
                     provider: provider,
+                    exhibition: exhibition,
                   ),
                 );
               }).toList(),
@@ -400,8 +330,13 @@ class _FloorPlanCanvas extends StatelessWidget {
 class _BoothTile extends StatelessWidget {
   final BoothModel booth;
   final ExhibitorProvider provider;
+  final ExhibitionModel exhibition;
 
-  const _BoothTile({required this.booth, required this.provider});
+  const _BoothTile({
+    required this.booth,
+    required this.provider,
+    required this.exhibition,
+  });
 
   void _showBoothDetail(BuildContext context) {
     final isSelected = provider.isBoothSelected(booth.id);
@@ -445,7 +380,11 @@ class _BoothTile extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              // Close = deselect if selected
+              if (isSelected) provider.toggleBoothSelection(booth);
+              Navigator.pop(context);
+            },
             child: const Text(
               'Close',
               style: TextStyle(color: Color(0xFF6C757D)),
@@ -454,19 +393,33 @@ class _BoothTile extends StatelessWidget {
           if (isAvailable)
             ElevatedButton(
               onPressed: () {
-                provider.toggleBoothSelection(booth);
-                Navigator.pop(context);
+                // Make sure booth is selected
+                if (!isSelected) provider.toggleBoothSelection(booth);
+                Navigator.pop(context); // close dialog
+                // Navigate to application form
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: provider,
+                      child: ApplicationFormScreen(
+                        exhibition: exhibition,
+                      ),
+                    ),
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: isSelected
-                    ? const Color(0xFFDC3545)
-                    : const Color(0xFF185FA5),
+                backgroundColor: const Color(0xFF185FA5),
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
               ),
-              child: Text(isSelected ? 'Deselect' : 'Select Booth'),
+              child: Text(
+                'Apply Now  •  RM ${provider.totalSelectedPrice.toStringAsFixed(2)}',
+                style: const TextStyle(fontSize: 13),
+              ),
             ),
         ],
       ),
