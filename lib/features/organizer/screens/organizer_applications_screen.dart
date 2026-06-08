@@ -3,9 +3,12 @@ import 'package:provider/provider.dart';
 import '../providers/organizer_provider.dart';
 import '../../../data/models/application_model.dart';
 import '../../../data/models/exhibition_model.dart';
+import '../organizer_bottom_nav.dart';
+import '../../auth/providers/auth_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class OrganizerApplicationsScreen extends StatefulWidget {
-  final ExhibitionModel exhibition;
+  final ExhibitionModel? exhibition;
 
   const OrganizerApplicationsScreen({super.key, required this.exhibition});
 
@@ -22,9 +25,12 @@ class _OrganizerApplicationsScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context
-          .read<OrganizerProvider>()
-          .loadApplications(widget.exhibition.id);
+      final uid = context.read<AuthProvider>().currentUser?.uid ?? '';
+      if (widget.exhibition != null) {
+        context.read<OrganizerProvider>().loadApplications(widget.exhibition!.id);
+      } else {
+        context.read<OrganizerProvider>().loadAllApplications(uid);
+      }
     });
   }
 
@@ -58,7 +64,7 @@ class _OrganizerApplicationsScreenState
     if (confirm == true && mounted) {
       final success = await context
           .read<OrganizerProvider>()
-          .approveApplication(app.id, widget.exhibition.id);
+          .approveApplication(app.id, app.exhibitionId);
       if (!success && mounted) {
         _showError(context.read<OrganizerProvider>().errorMessage);
       }
@@ -122,7 +128,7 @@ class _OrganizerApplicationsScreenState
       final success = await context
           .read<OrganizerProvider>()
           .rejectApplication(
-          app.id, widget.exhibition.id, reasonController.text.trim());
+          app.id, app.exhibitionId, reasonController.text.trim());
       if (!success && mounted) {
         _showError(context.read<OrganizerProvider>().errorMessage);
       }
@@ -154,7 +160,7 @@ class _OrganizerApplicationsScreenState
     if (confirm == true && mounted) {
       final success = await context
           .read<OrganizerProvider>()
-          .cancelApplication(app.id, widget.exhibition.id);
+          .cancelApplication(app.id, app.exhibitionId);
       if (!success && mounted) {
         _showError(context.read<OrganizerProvider>().errorMessage);
       }
@@ -182,16 +188,19 @@ class _OrganizerApplicationsScreenState
         elevation: 0.5,
         centerTitle: true,
         title: Text(
-          '${widget.exhibition.title} — Applications',
+          widget.exhibition != null
+              ? '${widget.exhibition!.title} — Applications'
+              : 'Applications',
           style: const TextStyle(
             color: Color(0xFF1A1C1E),
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
+        automaticallyImplyLeading: false,
         leading: IconButton(
           icon: const Icon(Icons.chevron_left, color: Color(0xFF185FA5)),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.go('/organizer/exhibitions'),
         ),
       ),
       body: Column(
@@ -248,8 +257,13 @@ class _OrganizerApplicationsScreenState
             )
                 : RefreshIndicator(
               color: const Color(0xFF185FA5),
-              onRefresh: () => organizer
-                  .loadApplications(widget.exhibition.id),
+              onRefresh: () {
+                final uid = context.read<AuthProvider>().currentUser?.uid ?? '';
+                if (widget.exhibition != null) {
+                  return organizer.loadApplications(widget.exhibition!.id);
+                }
+                return organizer.loadAllApplications(uid);
+              },
               child: ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: filtered.length,
@@ -273,6 +287,7 @@ class _OrganizerApplicationsScreenState
           ),
         ],
       ),
+      bottomNavigationBar: const OrganizerBottomNav(currentIndex: 2),
     );
   }
 }

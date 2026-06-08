@@ -5,9 +5,7 @@ import '../providers/organizer_provider.dart';
 import '../organizer_bottom_nav.dart';
 import 'organizer_exhibition_form_screen.dart';
 import '../../../data/models/exhibition_model.dart';
-import 'organizer_booths_screen.dart';
-import 'organizer_applications_screen.dart';
-
+import 'package:go_router/go_router.dart';
 class OrganizerExhibitionsScreen extends StatefulWidget {
   final bool showApplicationsHint;
   const OrganizerExhibitionsScreen({super.key, this.showApplicationsHint = false});
@@ -63,24 +61,14 @@ class _OrganizerExhibitionsScreenState
   }
 
   void _goToForm({ExhibitionModel? exhibition}) {
-    final uid = context.read<AuthProvider>().currentUser?.uid ?? '';
-    final provider = context.read<OrganizerProvider>();
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChangeNotifierProvider.value(
-          value: provider,
-          child: OrganizerExhibitionFormScreen(
-            organizerId: uid,
-            exhibition: exhibition,
-          ),
-        ),
-      ),
-    ).then((_) {
-      if (mounted) {
-        provider.loadExhibitions(uid);
-      }
-    });
+    if (exhibition != null) {
+      context.go(
+        '/organizer/exhibitions/${exhibition.id}/edit',
+        extra: exhibition,
+      );
+    } else {
+      context.go('/organizer/exhibitions/create');
+    }
   }
 
   Future<void> _delete(ExhibitionModel exhibition) async {
@@ -128,26 +116,16 @@ class _OrganizerExhibitionsScreenState
   }
 
   void _goToBooths(ExhibitionModel exhibition) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChangeNotifierProvider(
-          create: (_) => OrganizerProvider(),
-          child: OrganizerBoothsScreen(exhibition: exhibition),
-        ),
-      ),
+    context.go(
+      '/organizer/exhibitions/${exhibition.id}/booths',
+      extra: exhibition,
     );
   }
 
   void _goToApplications(ExhibitionModel exhibition) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChangeNotifierProvider(
-          create: (_) => OrganizerProvider(),
-          child: OrganizerApplicationsScreen(exhibition: exhibition),
-        ),
-      ),
+    context.go(
+      '/organizer/exhibitions/${exhibition.id}/applications',
+      extra: exhibition,
     );
   }
 

@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/exhibitor_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../data/models/application_model.dart';
+import '../../../data/models/booth_model.dart';
+import '../../../data/services/booth_service.dart';
 
 class ApplicationDetailScreen extends StatefulWidget {
   final ApplicationModel application;
@@ -15,34 +17,48 @@ class ApplicationDetailScreen extends StatefulWidget {
 }
 
 class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
-  // Edit controllers — pre-filled with current values
+  // Local mutable copy of application so UI reflects saves
+  late ApplicationModel _application;
+
+  // Edit controllers
   late final TextEditingController _companyNameController;
   late final TextEditingController _companyDescController;
   late final TextEditingController _exhibitDescController;
-  late List<String> _selectedAdditems;
-  bool _isEditing = false;
 
+  // Amenity selection for edit mode
+  late List<String> _selectedAmenityNames;
+
+  bool _isEditing = false;
   final _formKey = GlobalKey<FormState>();
 
-  final List<String> _availableAdditems = [
-    'Extra Furniture',
-    'Promotional Spot',
-    'Extended WiFi',
-    'Extra Power Outlets',
-    'Display Screen',
-    'Storage Space',
-  ];
+  // Booths resolved from boothIds
+  final BoothService _boothService = BoothService();
+  List<BoothModel> _resolvedBooths = [];
+  bool _isLoadingBooths = true;
+
+  // Available amenities derived from resolved booths
+  List<BoothAmenity> get _availableAmenities {
+    final Map<String, BoothAmenity> unique = {};
+    for (final booth in _resolvedBooths) {
+      for (final amenity in booth.amenities) {
+        unique[amenity.name] = amenity;
+      }
+    }
+    return unique.values.toList();
+  }
 
   @override
   void initState() {
     super.initState();
+    _application = widget.application;
     _companyNameController =
-        TextEditingController(text: widget.application.companyName);
+        TextEditingController(text: _application.companyName);
     _companyDescController =
-        TextEditingController(text: widget.application.companyDescription);
+        TextEditingController(text: _application.companyDescription);
     _exhibitDescController =
-        TextEditingController(text: widget.application.exhibitDescription);
-    _selectedAdditems = List<String>.from(widget.application.additems);
+        TextEditingController(text: _application.exhibitDescription);
+    _selectedAmenityNames = List<String>.from(_application.additems);
+    _loadBooths();
   }
 
   @override
@@ -53,26 +69,115 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
     super.dispose();
   }
 
+  Future<void> _loadBooths() async {
+    try {
+      final allBooths = await _boothService
+          .getBoothsByExhibition(_application.exhibitionId);
+
+      final resolved = _application.boothIds.map((id) {
+        return allBooths.firstWhere(
+              (b) => b.id == id,
+          orElse: () => BoothModel(
+            id: id,
+            exhibitionId: _application.exhibitionId,
+            boothNumber: id,
+            type: '',
+            size: '',
+            price: 0,
+          ),
+        );
+      }).toList();
+
+      if (mounted) {
+        setState(() {
+          _resolvedBooths = resolved;
+          _isLoadingBooths = false;
+
+          // If boothsPrice was never saved (old data), calculate it now
+          // from resolved booth data so price summary shows correctly
+          if (_application.boothsPrice == 0 && resolved.isNotEmpty) {
+            final calculatedBoothsPrice =
+            resolved.fold(0.0, (sum, b) => sum + b.price);
+
+            // Recalculate amenities price from current additems
+            double calculatedAmenitiesPrice = 0;
+            final amenityMap = {
+              for (final b in resolved)
+                for (final a in b.amenities) a.name: a.price
+            };
+            for (final name in _application.additems) {
+              calculatedAmenitiesPrice += amenityMap[name] ?? 0;
+            }
+
+            _application = ApplicationModel(
+              id: _application.id,
+              exhibitorId: _application.exhibitorId,
+              exhibitionId: _application.exhibitionId,
+              boothIds: _application.boothIds,
+              companyName: _application.companyName,
+              companyDescription: _application.companyDescription,
+              exhibitDescription: _application.exhibitDescription,
+              additems: _application.additems,
+              status: _application.status,
+              rejectionReason: _application.rejectionReason,
+              createdAt: _application.createdAt,
+              boothsPrice: calculatedBoothsPrice,
+              amenitiesPrice: calculatedAmenitiesPrice,
+            );
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingBooths = false);
+    }
+  }
+
   // ── Save edits ────────────────────────────────────────────────
   Future<void> _saveEdits() async {
     if (!_formKey.currentState!.validate()) return;
 
     final provider = context.read<ExhibitorProvider>();
 
+    // Recalculate amenities price based on new selection
+    double newAmenitiesPrice = 0;
+    for (final amenity in _availableAmenities) {
+      if (_selectedAmenityNames.contains(amenity.name)) {
+        newAmenitiesPrice += amenity.price;
+      }
+    }
+
+    final updatedData = {
+      'companyName': _companyNameController.text.trim(),
+      'companyDescription': _companyDescController.text.trim(),
+      'exhibitDescription': _exhibitDescController.text.trim(),
+      'additems': _selectedAmenityNames,
+      'amenitiesPrice': newAmenitiesPrice, // update stored price
+    };
+
     final success = await provider.updateApplication(
-      widget.application.id,
-      {
-        'companyName': _companyNameController.text.trim(),
-        'companyDescription': _companyDescController.text.trim(),
-        'exhibitDescription': _exhibitDescController.text.trim(),
-        'additems': _selectedAdditems,
-      },
-    );
+        _application.id, updatedData);
 
     if (!mounted) return;
 
     if (success) {
-      setState(() => _isEditing = false);
+      setState(() {
+        _application = ApplicationModel(
+          id: _application.id,
+          exhibitorId: _application.exhibitorId,
+          exhibitionId: _application.exhibitionId,
+          boothIds: _application.boothIds,
+          companyName: _companyNameController.text.trim(),
+          companyDescription: _companyDescController.text.trim(),
+          exhibitDescription: _exhibitDescController.text.trim(),
+          additems: List<String>.from(_selectedAmenityNames),
+          status: _application.status,
+          rejectionReason: _application.rejectionReason,
+          createdAt: _application.createdAt,
+          boothsPrice: _application.boothsPrice,
+          amenitiesPrice: newAmenitiesPrice, // use recalculated price
+        );
+        _isEditing = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Application updated successfully'),
@@ -94,8 +199,8 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape:
-        RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12)),
         title: const Text(
           'Cancel Application',
           style: TextStyle(
@@ -112,10 +217,8 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text(
-              'Keep Application',
-              style: TextStyle(color: Color(0xFF6C757D)),
-            ),
+            child: const Text('Keep Application',
+                style: TextStyle(color: Color(0xFF6C757D))),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -138,7 +241,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
     final uid = context.read<AuthProvider>().currentUser!.uid;
 
     final success =
-    await provider.cancelApplication(widget.application.id, uid);
+    await provider.cancelApplication(_application.id, uid);
 
     if (!mounted) return;
 
@@ -149,7 +252,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
           backgroundColor: Color(0xFF6C757D),
         ),
       );
-      Navigator.pop(context); // go back to My Applications
+      Navigator.pop(context);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -163,10 +266,10 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
   // ── Discard edits ─────────────────────────────────────────────
   void _discardEdits() {
     setState(() {
-      _companyNameController.text = widget.application.companyName;
-      _companyDescController.text = widget.application.companyDescription;
-      _exhibitDescController.text = widget.application.exhibitDescription;
-      _selectedAdditems = List<String>.from(widget.application.additems);
+      _companyNameController.text = _application.companyName;
+      _companyDescController.text = _application.companyDescription;
+      _exhibitDescController.text = _application.exhibitDescription;
+      _selectedAmenityNames = List<String>.from(_application.additems);
       _isEditing = false;
     });
   }
@@ -204,11 +307,40 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
     }
   }
 
+  IconData _statusIcon(String status) {
+    switch (status) {
+      case 'pending':
+        return Icons.hourglass_empty_outlined;
+      case 'approved':
+        return Icons.check_circle_outline;
+      case 'rejected':
+        return Icons.cancel_outlined;
+      case 'cancelled':
+        return Icons.block_outlined;
+      default:
+        return Icons.info_outline;
+    }
+  }
+
+  String _statusDescription(String status) {
+    switch (status) {
+      case 'pending':
+        return 'Awaiting organizer review';
+      case 'approved':
+        return 'Your booth has been confirmed';
+      case 'rejected':
+        return 'Your application was not accepted';
+      case 'cancelled':
+        return 'This application has been cancelled';
+      default:
+        return '';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ExhibitorProvider>();
-    final application = widget.application;
-    final status = application.status;
+    final status = _application.status;
     final isPending = status == 'pending';
 
     return Scaffold(
@@ -271,11 +403,8 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      _statusIcon(status),
-                      size: 18,
-                      color: _statusText(status),
-                    ),
+                    Icon(_statusIcon(status),
+                        size: 18, color: _statusText(status)),
                     const SizedBox(width: 8),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -291,9 +420,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                         Text(
                           _statusDescription(status),
                           style: TextStyle(
-                            fontSize: 12,
-                            color: _statusText(status),
-                          ),
+                              fontSize: 12, color: _statusText(status)),
                         ),
                       ],
                     ),
@@ -303,7 +430,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
 
               // Rejection reason
               if (status == 'rejected' &&
-                  application.rejectionReason.isNotEmpty) ...[
+                  _application.rejectionReason.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Container(
                   width: double.infinity,
@@ -311,8 +438,9 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFFFCEBEB),
                     borderRadius: BorderRadius.circular(10),
-                    border:
-                    Border.all(color: const Color(0xFFDC3545).withOpacity(0.3)),
+                    border: Border.all(
+                        color:
+                        const Color(0xFFDC3545).withOpacity(0.3)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -327,11 +455,9 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        application.rejectionReason,
+                        _application.rejectionReason,
                         style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF721C24),
-                        ),
+                            fontSize: 13, color: Color(0xFF721C24)),
                       ),
                     ],
                   ),
@@ -340,10 +466,19 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
               const SizedBox(height: 16),
 
               // ── Booths Applied ────────────────────────────────
+              // ── Booths Applied ────────────────────────────────────────
               const _SectionHeader(title: 'Booths Applied'),
               const SizedBox(height: 10),
               _InfoCard(
-                child: Column(
+                child: _isLoadingBooths
+                    ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: CircularProgressIndicator(
+                        color: Color(0xFF185FA5)),
+                  ),
+                )
+                    : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
@@ -352,7 +487,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                             size: 15, color: Color(0xFF6C757D)),
                         const SizedBox(width: 6),
                         Text(
-                          '${application.boothIds.length} booth${application.boothIds.length > 1 ? 's' : ''}',
+                          '${_resolvedBooths.length} booth${_resolvedBooths.length > 1 ? 's' : ''}',
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -365,7 +500,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: application.boothIds.map((id) {
+                      children: _resolvedBooths.map((booth) {
                         return Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 5),
@@ -374,9 +509,10 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            id,
+                            'Booth ${booth.boothNumber}  RM ${booth.price.toStringAsFixed(2)}',
                             style: const TextStyle(
-                              fontSize: 11,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
                               color: Color(0xFF495057),
                             ),
                           ),
@@ -389,17 +525,79 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Submitted',
-                          style: TextStyle(
-                              fontSize: 13, color: Color(0xFF6C757D)),
-                        ),
+                        const Text('Submitted',
+                            style: TextStyle(
+                                fontSize: 13, color: Color(0xFF6C757D))),
                         Text(
-                          _formatDate(application.createdAt),
+                          _formatDate(_application.createdAt),
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                             color: Color(0xFF1A1C1E),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+// ── Price Summary (frozen snapshot) ──────────────────────
+              const _SectionHeader(title: 'Price Summary'),
+              const SizedBox(height: 10),
+              _InfoCard(
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Booth(s) subtotal',
+                            style: TextStyle(
+                                fontSize: 13, color: Color(0xFF6C757D))),
+                        Text(
+                          'RM ${_application.boothsPrice.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                              fontSize: 13, color: Color(0xFF1A1C1E)),
+                        ),
+                      ],
+                    ),
+                    if (_application.amenitiesPrice > 0) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Amenities subtotal',
+                              style: TextStyle(
+                                  fontSize: 13, color: Color(0xFF6C757D))),
+                          Text(
+                            'RM ${_application.amenitiesPrice.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                                fontSize: 13, color: Color(0xFF1A1C1E)),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    const Divider(color: Color(0xFFDEE2E6), height: 1),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Total Paid',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1A1C1E),
+                          ),
+                        ),
+                        Text(
+                          'RM ${_application.totalPrice.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF185FA5),
                           ),
                         ),
                       ],
@@ -420,16 +618,18 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                       controller: _companyNameController,
                       label: 'Company Name',
                       icon: Icons.business_outlined,
-                      validator: (v) => v == null || v.trim().isEmpty
+                      validator: (v) =>
+                      v == null || v.trim().isEmpty
                           ? 'Required'
                           : null,
                     )
                         : _ReadOnlyRow(
                       label: 'Company Name',
-                      value: application.companyName,
+                      value: _application.companyName,
                     ),
                     const SizedBox(height: 12),
-                    const Divider(color: Color(0xFFDEE2E6), height: 1),
+                    const Divider(
+                        color: Color(0xFFDEE2E6), height: 1),
                     const SizedBox(height: 12),
                     _isEditing
                         ? _EditField(
@@ -437,13 +637,14 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                       label: 'Company Description',
                       icon: Icons.description_outlined,
                       maxLines: 3,
-                      validator: (v) => v == null || v.trim().isEmpty
+                      validator: (v) =>
+                      v == null || v.trim().isEmpty
                           ? 'Required'
                           : null,
                     )
                         : _ReadOnlyRow(
                       label: 'Company Description',
-                      value: application.companyDescription,
+                      value: _application.companyDescription,
                     ),
                   ],
                 ),
@@ -461,43 +662,65 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                   icon: Icons.storefront_outlined,
                   maxLines: 3,
                   validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Required' : null,
+                  v == null || v.trim().isEmpty
+                      ? 'Required'
+                      : null,
                 )
                     : _ReadOnlyRow(
                   label: 'Exhibit Description',
-                  value: application.exhibitDescription,
+                  value: _application.exhibitDescription,
                 ),
               ),
               const SizedBox(height: 20),
 
-              // ── Additional Items ──────────────────────────────
-              const _SectionHeader(title: 'Additional Items'),
+              // ── Amenities ─────────────────────────────────────
+              const _SectionHeader(title: 'Amenities'),
               const SizedBox(height: 10),
               _InfoCard(
-                child: _isEditing
-                    ? Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _availableAdditems.map((item) {
-                    final isSelected = _selectedAdditems.contains(item);
+                child: _isLoadingBooths
+                    ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: CircularProgressIndicator(
+                        color: Color(0xFF185FA5)),
+                  ),
+                )
+                    : _isEditing
+                // Edit mode — show all available amenities as checkboxes
+                    ? _availableAmenities.isEmpty
+                    ? const Text(
+                  'No amenities available for these booths.',
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF6C757D)),
+                )
+                    : Column(
+                  children: _availableAmenities.map((amenity) {
+                    final isSelected = _selectedAmenityNames
+                        .contains(amenity.name);
                     return GestureDetector(
                       onTap: () {
                         setState(() {
                           if (isSelected) {
-                            _selectedAdditems.remove(item);
+                            _selectedAmenityNames
+                                .remove(amenity.name);
                           } else {
-                            _selectedAdditems.add(item);
+                            _selectedAmenityNames
+                                .add(amenity.name);
                           }
                         });
                       },
                       child: Container(
+                        margin: const EdgeInsets.only(
+                            bottom: 8),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 7),
+                            horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? const Color(0xFF185FA5)
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(20),
+                              ? const Color(0xFFCCE5FF)
+                              : const Color(0xFFF8F9FA),
+                          borderRadius:
+                          BorderRadius.circular(8),
                           border: Border.all(
                             color: isSelected
                                 ? const Color(0xFF185FA5)
@@ -505,20 +728,39 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                           ),
                         ),
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (isSelected) ...[
-                              const Icon(Icons.check,
-                                  size: 13, color: Colors.white),
-                              const SizedBox(width: 4),
-                            ],
+                            Icon(
+                              isSelected
+                                  ? Icons.check_box
+                                  : Icons
+                                  .check_box_outline_blank,
+                              size: 18,
+                              color: isSelected
+                                  ? const Color(0xFF185FA5)
+                                  : const Color(0xFF6C757D),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                amenity.name,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: isSelected
+                                      ? const Color(
+                                      0xFF004085)
+                                      : const Color(
+                                      0xFF1A1C1E),
+                                ),
+                              ),
+                            ),
                             Text(
-                              item,
+                              '+ RM ${amenity.price.toStringAsFixed(2)}',
                               style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
                                 color: isSelected
-                                    ? Colors.white
+                                    ? const Color(0xFF185FA5)
                                     : const Color(0xFF6C757D),
                               ),
                             ),
@@ -528,29 +770,62 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                     );
                   }).toList(),
                 )
-                    : application.additems.isEmpty
+                // View mode — show only selected amenities
+                    : _application.additems.isEmpty
                     ? const Text(
-                  'No additional items requested',
+                  'No amenities requested',
                   style: TextStyle(
-                      fontSize: 13, color: Color(0xFF6C757D)),
+                      fontSize: 13,
+                      color: Color(0xFF6C757D)),
                 )
-                    : Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: application.additems.map((item) {
+                    : Column(
+                  children: _application.additems.map((name) {
+                    // Try to find price from resolved booths
+                    final amenity =
+                    _availableAmenities.firstWhere(
+                          (a) => a.name == name,
+                      orElse: () =>
+                          BoothAmenity(name: name, price: 0),
+                    );
                     return Container(
+                      margin:
+                      const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
+                          horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE9ECEF),
-                        borderRadius: BorderRadius.circular(20),
+                        color: const Color(0xFFCCE5FF),
+                        borderRadius:
+                        BorderRadius.circular(8),
+                        border: Border.all(
+                            color:
+                            const Color(0xFF185FA5)),
                       ),
-                      child: Text(
-                        item,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF495057),
-                        ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check_box,
+                              size: 18,
+                              color: Color(0xFF185FA5)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              name,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF004085),
+                              ),
+                            ),
+                          ),
+                          if (amenity.price > 0)
+                            Text(
+                              'RM ${amenity.price.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF185FA5),
+                              ),
+                            ),
+                        ],
                       ),
                     );
                   }).toList(),
@@ -563,7 +838,8 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: provider.isSubmitting ? null : _saveEdits,
+                    onPressed:
+                    provider.isSubmitting ? null : _saveEdits,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF185FA5),
                       foregroundColor: Colors.white,
@@ -579,23 +855,21 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
+                          color: Colors.white, strokeWidth: 2),
                     )
-                        : const Text(
-                      'Save Changes',
-                      style: TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.w600),
-                    ),
+                        : const Text('Save Changes',
+                        style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600)),
                   ),
                 ),
               ] else if (isPending || status == 'approved') ...[
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
-                    onPressed:
-                    provider.isSubmitting ? null : _cancelApplication,
+                    onPressed: provider.isSubmitting
+                        ? null
+                        : _cancelApplication,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFFDC3545),
                       side: const BorderSide(color: Color(0xFFDC3545)),
@@ -608,17 +882,15 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
-                        color: Color(0xFFDC3545),
-                        strokeWidth: 2,
-                      ),
+                          color: Color(0xFFDC3545), strokeWidth: 2),
                     )
                         : Text(
-                      isPending
-                          ? 'Cancel Application'
-                          : 'Cancel Booking',
-                      style: const TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.w600),
-                    ),
+                        isPending
+                            ? 'Cancel Application'
+                            : 'Cancel Booking',
+                        style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600)),
                   ),
                 ),
               ],
@@ -628,36 +900,6 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
         ),
       ),
     );
-  }
-
-  IconData _statusIcon(String status) {
-    switch (status) {
-      case 'pending':
-        return Icons.hourglass_empty_outlined;
-      case 'approved':
-        return Icons.check_circle_outline;
-      case 'rejected':
-        return Icons.cancel_outlined;
-      case 'cancelled':
-        return Icons.block_outlined;
-      default:
-        return Icons.info_outline;
-    }
-  }
-
-  String _statusDescription(String status) {
-    switch (status) {
-      case 'pending':
-        return 'Awaiting organizer review';
-      case 'approved':
-        return 'Your booth has been confirmed';
-      case 'rejected':
-        return 'Your application was not accepted';
-      case 'cancelled':
-        return 'This application has been cancelled';
-      default:
-        return '';
-    }
   }
 }
 
@@ -711,18 +953,13 @@ class _ReadOnlyRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: Color(0xFF6C757D)),
-        ),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 12, color: Color(0xFF6C757D))),
         const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Color(0xFF1A1C1E),
-          ),
-        ),
+        Text(value,
+            style: const TextStyle(
+                fontSize: 14, color: Color(0xFF1A1C1E))),
       ],
     );
   }
@@ -754,7 +991,8 @@ class _EditField extends StatelessWidget {
         labelText: label,
         labelStyle:
         const TextStyle(fontSize: 13, color: Color(0xFF6C757D)),
-        prefixIcon: Icon(icon, size: 18, color: const Color(0xFF6C757D)),
+        prefixIcon:
+        Icon(icon, size: 18, color: const Color(0xFF6C757D)),
         filled: true,
         fillColor: const Color(0xFFF8F9FA),
         contentPadding:

@@ -228,6 +228,28 @@ class OrganizerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> loadAllApplications(String organizerId) async {
+    _isLoading = true;
+    _errorMessage = '';
+    notifyListeners();
+    try {
+      // Load all organizer exhibitions first, then fetch applications for each
+      final exhibitions =
+      await _exhibitionService.getOrganizerExhibitions(organizerId);
+      final List<ApplicationModel> all = [];
+      for (final exhibition in exhibitions) {
+        final apps = await _applicationService
+            .getExhibitionApplications(exhibition.id);
+        all.addAll(apps);
+      }
+      _applications = all;
+    } catch (e) {
+      _errorMessage = e.toString();
+    }
+    _isLoading = false;
+    notifyListeners();
+  }
+
   Future<bool> approveApplication(String id, String exhibitionId) async {
     _errorMessage = '';
     try {

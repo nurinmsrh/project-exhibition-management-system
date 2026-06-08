@@ -265,6 +265,10 @@ class ExhibitorProvider extends ChangeNotifier {
     try {
       final boothIds = _selectedBooths.map((b) => b.id).toList();
 
+      // Snapshot prices at time of submission
+      final boothsPrice = selectedBoothsBasePrice;
+      final amenitiesPrice = selectedAmenitiesPrice;
+
       await _applicationService.submitApplication(
         exhibitorId: exhibitorId,
         exhibitionId: exhibitionId,
@@ -273,6 +277,8 @@ class ExhibitorProvider extends ChangeNotifier {
         companyDescription: companyDescription,
         exhibitDescription: exhibitDescription,
         additems: List<String>.from(_selectedAmenityNames),
+        boothsPrice: boothsPrice,
+        amenitiesPrice: amenitiesPrice,
       );
 
       for (final booth in _selectedBooths) {

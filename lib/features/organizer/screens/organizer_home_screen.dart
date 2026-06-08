@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/organizer_provider.dart';
 import '../organizer_bottom_nav.dart';
-import '../../auth/screens/login_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class OrganizerHomeScreen extends StatefulWidget {
   const OrganizerHomeScreen({super.key});
@@ -28,6 +28,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
 
   Future<void> _logout() async {
     await context.read<AuthProvider>().logout();
+    if (mounted) context.go('/login');
   }
 
   @override

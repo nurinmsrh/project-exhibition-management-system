@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/organizer_provider.dart';
 import '../../../data/models/exhibition_model.dart';
 import '../../../data/models/booth_model.dart';
+import '../organizer_bottom_nav.dart';
 
 class OrganizerBoothsScreen extends StatefulWidget {
   final ExhibitionModel exhibition;
@@ -171,6 +172,7 @@ class _OrganizerBoothsScreenState extends State<OrganizerBoothsScreen> {
           ],
         ),
       ),
+      bottomNavigationBar: const OrganizerBottomNav(currentIndex: 1),
     );
   }
 }
@@ -186,11 +188,8 @@ class _FloorPlan extends StatelessWidget {
   Color _boothColor(String status) {
     switch (status) {
       case 'booked':
-        return const Color(0xFFDC3545);
       case 'reserved':
-        return const Color(0xFFEF9F27);
-      case 'unavailable':
-        return const Color(0xFF6C757D);
+        return const Color(0xFFDC3545);
       default:
         return const Color(0xFF1D9E75);
     }
@@ -234,9 +233,7 @@ class _FloorPlan extends StatelessWidget {
               runSpacing: 4,
               children: const [
                 _LegendItem(color: Color(0xFF1D9E75), label: 'Available'),
-                _LegendItem(color: Color(0xFFEF9F27), label: 'Reserved'),
                 _LegendItem(color: Color(0xFFDC3545), label: 'Booked'),
-                _LegendItem(color: Color(0xFF6C757D), label: 'Unavailable'),
               ],
             ),
           ),
@@ -487,24 +484,15 @@ class _BoothFormSheetState extends State<_BoothFormSheet> {
   final _priceController = TextEditingController();
   final _positionXController = TextEditingController(text: '0');
   final _positionYController = TextEditingController(text: '0');
-  final _widthController = TextEditingController(text: '80');
-  final _heightController = TextEditingController(text: '80');
   final _amenityNameController = TextEditingController();
   final _amenityPriceController = TextEditingController();
   final List<BoothAmenity> _amenities = [];
+  final List<String> _types = ['Standard', 'Premium'];
+
 
   String _type = 'Standard';
-  String _size = 'Small (3x3m)';
   bool _isSubmitting = false;
   bool get _isEdit => widget.booth != null;
-
-  final List<String> _types = ['Standard', 'Premium', 'Corner', 'Island'];
-  final List<String> _sizes = [
-    'Small (3x3m)',
-    'Medium (4x4m)',
-    'Large (5x5m)',
-    'Extra Large (6x6m)',
-  ];
 
   @override
   void initState() {
@@ -514,10 +502,7 @@ class _BoothFormSheetState extends State<_BoothFormSheet> {
       _priceController.text = widget.booth!.price.toString();
       _positionXController.text = widget.booth!.positionX.toString();
       _positionYController.text = widget.booth!.positionY.toString();
-      _widthController.text = widget.booth!.width.toString();
-      _heightController.text = widget.booth!.height.toString();
       _type = widget.booth!.type;
-      _size = widget.booth!.size;
       _amenities.addAll(widget.booth!.amenities);
     }
   }
@@ -528,8 +513,6 @@ class _BoothFormSheetState extends State<_BoothFormSheet> {
     _priceController.dispose();
     _positionXController.dispose();
     _positionYController.dispose();
-    _widthController.dispose();
-    _heightController.dispose();
     _amenityNameController.dispose();
     _amenityPriceController.dispose();
     super.dispose();
@@ -560,8 +543,6 @@ class _BoothFormSheetState extends State<_BoothFormSheet> {
         double.tryParse(_positionXController.text.trim()) ?? 0;
     final posY =
         double.tryParse(_positionYController.text.trim()) ?? 0;
-    final w = double.tryParse(_widthController.text.trim()) ?? 80;
-    final h = double.tryParse(_heightController.text.trim()) ?? 80;
 
     if (_isEdit) {
       success = await provider.updateBooth(
@@ -569,13 +550,11 @@ class _BoothFormSheetState extends State<_BoothFormSheet> {
         {
           'boothNumber': _numberController.text.trim(),
           'type': _type,
-          'size': _size,
+          'size': '20',
           'price': double.tryParse(_priceController.text.trim()) ?? 0,
-          'amenities': _amenities.map((a) => a.toMap()).toList(),
           'positionX': posX,
           'positionY': posY,
-          'width': w,
-          'height': h,
+          'amenities': _amenities.map((a) => a.toMap()).toList(),
         },
         widget.exhibitionId,
       );
@@ -584,13 +563,11 @@ class _BoothFormSheetState extends State<_BoothFormSheet> {
         exhibitionId: widget.exhibitionId,
         boothNumber: _numberController.text.trim(),
         type: _type,
-        size: _size,
+        size: '20',
         price: double.tryParse(_priceController.text.trim()) ?? 0,
         amenities: _amenities.map((a) => a.toMap()).toList(),
         positionX: posX,
         positionY: posY,
-        width: w,
-        height: h,
       );
     }
 
@@ -660,39 +637,18 @@ class _BoothFormSheetState extends State<_BoothFormSheet> {
               const SizedBox(height: 12),
 
               // Type & Size row
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _label('Type *'),
-                        const SizedBox(height: 6),
-                        _dropdown(
-                          value: _type,
-                          items: _types,
-                          onChanged: (v) => setState(() => _type = v!),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _label('Size *'),
-                        const SizedBox(height: 6),
-                        _dropdown(
-                          value: _size,
-                          items: _sizes,
-                          onChanged: (v) => setState(() => _size = v!),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _label('Type *'),
+                          const SizedBox(height: 6),
+                          _dropdown(
+                            value: _type,
+                            items: _types,
+                            onChanged: (v) => setState(() => _type = v!),
+                          ),
+                        ],
+                      ),
               const SizedBox(height: 12),
 
               // Price
@@ -715,7 +671,7 @@ class _BoothFormSheetState extends State<_BoothFormSheet> {
               const SizedBox(height: 12),
 
               // Position & Size
-              _label('Position & Size'),
+              _label('Position '),
               const SizedBox(height: 6),
               Row(
                 children: [
@@ -735,21 +691,6 @@ class _BoothFormSheetState extends State<_BoothFormSheet> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: _field(
-                      controller: _widthController,
-                      hint: 'W',
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _field(
-                      controller: _heightController,
-                      hint: 'H',
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(height: 12),

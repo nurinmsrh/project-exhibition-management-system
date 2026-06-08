@@ -1,5 +1,4 @@
-// lib/features/organizer/screens/organizer_exhibition_form_screen.dart
-
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/organizer_provider.dart';
@@ -144,7 +143,7 @@ class _OrganizerExhibitionFormScreenState
           backgroundColor: const Color(0xFF1D9E75),
         ),
       );
-      Navigator.pop(context);
+      context.go('/organizer/exhibitions');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -173,7 +172,7 @@ class _OrganizerExhibitionFormScreenState
         ),
         leading: IconButton(
           icon: const Icon(Icons.chevron_left, color: Color(0xFF185FA5)),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.go('/organizer/exhibitions'),
         ),
       ),
       body: SingleChildScrollView(

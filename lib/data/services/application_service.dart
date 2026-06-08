@@ -15,6 +15,8 @@ class ApplicationService {
     required String companyDescription,
     required String exhibitDescription,
     List<String> additems = const [],
+    double boothsPrice = 0,
+    double amenitiesPrice = 0,
   }) async {
     try {
       String id = _uuid.v4();
@@ -28,6 +30,8 @@ class ApplicationService {
         exhibitDescription: exhibitDescription,
         additems: additems,
         createdAt: DateTime.now(),
+        boothsPrice: boothsPrice,
+        amenitiesPrice: amenitiesPrice,
       );
       await _firestore
           .collection('applications')

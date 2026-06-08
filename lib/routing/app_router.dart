@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../data/models/exhibition_model.dart';
 
 import '../features/auth/providers/auth_provider.dart';
 import '../features/auth/screens/login_screen.dart';
@@ -20,6 +21,9 @@ import '../features/admin/providers/admin_provider.dart';
 import '../features/organizer/providers/organizer_provider.dart';
 import '../features/organizer/screens/organizer_home_screen.dart';
 import '../features/organizer/screens/organizer_exhibitions_screen.dart';
+import '../features/organizer/screens/organizer_booths_screen.dart';
+import '../features/organizer/screens/organizer_applications_screen.dart';
+import '../features/organizer/screens/organizer_exhibition_form_screen.dart';
 
 import '../features/exhibitor/providers/exhibitor_provider.dart';
 import '../features/exhibitor/screens/exhibitor_home_screen.dart';
@@ -181,6 +185,7 @@ GoRouter createRouter(AuthProvider authProvider) {
       ),
 
       // ── Organizer ─────────────────────────────────────────────
+// ── Organizer ─────────────────────────────────────────────
       GoRoute(
         path: '/organizer',
         builder: (context, state) => MultiProvider(
@@ -202,13 +207,67 @@ GoRouter createRouter(AuthProvider authProvider) {
         ),
       ),
       GoRoute(
+        path: '/organizer/exhibitions/create',
+        builder: (context, state) => MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => OrganizerProvider()),
+            ChangeNotifierProvider.value(value: authProvider),
+          ],
+          child: OrganizerExhibitionFormScreen(
+            organizerId: authProvider.currentUser?.uid ?? '',
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/organizer/exhibitions/:id/edit',
+        builder: (context, state) {
+          final exhibition = state.extra as ExhibitionModel;
+          return MultiProvider(
+            providers: [
+              ChangeNotifierProvider(create: (_) => OrganizerProvider()),
+              ChangeNotifierProvider.value(value: authProvider),
+            ],
+            child: OrganizerExhibitionFormScreen(
+              organizerId: authProvider.currentUser?.uid ?? '',
+              exhibition: exhibition,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/organizer/exhibitions/:id/booths',
+        builder: (context, state) {
+          final exhibition = state.extra as ExhibitionModel;
+          return MultiProvider(
+            providers: [
+              ChangeNotifierProvider(create: (_) => OrganizerProvider()),
+              ChangeNotifierProvider.value(value: authProvider),
+            ],
+            child: OrganizerBoothsScreen(exhibition: exhibition),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/organizer/exhibitions/:id/applications',
+        builder: (context, state) {
+          final exhibition = state.extra as ExhibitionModel?;
+          return MultiProvider(
+            providers: [
+              ChangeNotifierProvider(create: (_) => OrganizerProvider()),
+              ChangeNotifierProvider.value(value: authProvider),
+            ],
+            child: OrganizerApplicationsScreen(exhibition: exhibition),
+          );
+        },
+      ),
+      GoRoute(
         path: '/organizer/applications',
         builder: (context, state) => MultiProvider(
           providers: [
             ChangeNotifierProvider(create: (_) => OrganizerProvider()),
             ChangeNotifierProvider.value(value: authProvider),
           ],
-          child: const OrganizerExhibitionsScreen(showApplicationsHint: true),
+          child: const OrganizerApplicationsScreen(exhibition: null),
         ),
       ),
     ],
