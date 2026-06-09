@@ -149,13 +149,10 @@ class OrganizerProvider extends ChangeNotifier {
     required String exhibitionId,
     required String boothNumber,
     required String type,
-    required String size,
     required double price,
     List<Map<String, dynamic>> amenities = const [],
     double positionX = 0,
     double positionY = 0,
-    double width = 80,
-    double height = 80,
   }) async {
     _errorMessage = '';
     try {
@@ -163,13 +160,10 @@ class OrganizerProvider extends ChangeNotifier {
         exhibitionId: exhibitionId,
         boothNumber: boothNumber,
         type: type,
-        size: size,
         price: price,
         amenities: amenities,
         positionX: positionX,
         positionY: positionY,
-        width: width,
-        height: height,
       );
       await loadBooths(exhibitionId);
       return true;

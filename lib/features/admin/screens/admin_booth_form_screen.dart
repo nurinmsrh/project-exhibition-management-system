@@ -21,23 +21,20 @@ class AdminBoothFormScreen extends StatefulWidget {
 class _AdminBoothFormScreenState extends State<AdminBoothFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _boothNumberController = TextEditingController();
-  final _sizeController = TextEditingController();
   final _priceController = TextEditingController();
   final _positionXController = TextEditingController(text: '0');
   final _positionYController = TextEditingController(text: '0');
-  final _widthController = TextEditingController(text: '50');
-  final _heightController = TextEditingController(text: '50');
   final _descriptionController = TextEditingController();
-
-  // Amenity input controllers
   final _amenityNameController = TextEditingController();
   final _amenityPriceController = TextEditingController();
+  final List<BoothAmenity> _amenities = [];
 
   String _type = 'standard';
   String _status = 'available';
-  final List<BoothAmenity> _amenities = [];
   bool _isLoading = false;
   BoothModel? _booth;
+
+  final List<String> _types = ['standard', 'premium'];
 
   @override
   void initState() {
@@ -52,12 +49,9 @@ class _AdminBoothFormScreenState extends State<AdminBoothFormScreen> {
   @override
   void dispose() {
     _boothNumberController.dispose();
-    _sizeController.dispose();
     _priceController.dispose();
     _positionXController.dispose();
     _positionYController.dispose();
-    _widthController.dispose();
-    _heightController.dispose();
     _descriptionController.dispose();
     _amenityNameController.dispose();
     _amenityPriceController.dispose();
@@ -70,12 +64,9 @@ class _AdminBoothFormScreenState extends State<AdminBoothFormScreen> {
     try {
       _booth = provider.booths.firstWhere((b) => b.id == widget.boothId);
       _boothNumberController.text = _booth!.boothNumber;
-      _sizeController.text = _booth!.size;
       _priceController.text = _booth!.price.toString();
       _positionXController.text = _booth!.positionX.toString();
       _positionYController.text = _booth!.positionY.toString();
-      _widthController.text = _booth!.width.toString();
-      _heightController.text = _booth!.height.toString();
       _descriptionController.text = _booth!.description;
       _type = _booth!.type;
       _status = _booth!.status;
@@ -89,13 +80,6 @@ class _AdminBoothFormScreenState extends State<AdminBoothFormScreen> {
   void _addAmenity() {
     final name = _amenityNameController.text.trim();
     final price = double.tryParse(_amenityPriceController.text.trim());
-    if (name.isEmpty || price == null || price < 0) return;
-    if (_amenities.any((a) => a.name.toLowerCase() == name.toLowerCase())) return;
-    setState(() {
-      _amenities.add(BoothAmenity(name: name, price: price));
-      _amenityNameController.clear();
-      _amenityPriceController.clear();
-    });
 
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -115,7 +99,6 @@ class _AdminBoothFormScreenState extends State<AdminBoothFormScreen> {
       );
       return;
     }
-    // Check duplicate
     if (_amenities.any((a) => a.name.toLowerCase() == name.toLowerCase())) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -133,23 +116,18 @@ class _AdminBoothFormScreenState extends State<AdminBoothFormScreen> {
     });
   }
 
-  void _removeAmenity(int index) {
-    setState(() => _amenities.removeAt(index));
-  }
-
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
     final posX = double.tryParse(_positionXController.text.trim()) ?? 0;
     final posY = double.tryParse(_positionYController.text.trim()) ?? 0;
-    final w = double.tryParse(_widthController.text.trim()) ?? 50;
-    final h = double.tryParse(_heightController.text.trim()) ?? 50;
 
     setState(() => _isLoading = true);
 
     final provider = context.read<AdminProvider>();
     await provider.loadBooths(widget.exhibitionId);
 
+    // Check position conflict
     final conflict = provider.booths.any((b) {
       if (b.id == widget.boothId) return false;
       return b.positionX == posX && b.positionY == posY;
@@ -176,13 +154,10 @@ class _AdminBoothFormScreenState extends State<AdminBoothFormScreen> {
         exhibitionId: widget.exhibitionId,
         boothNumber: _boothNumberController.text.trim(),
         type: _type,
-        size: _sizeController.text.trim(),
         price: double.tryParse(_priceController.text.trim()) ?? 0,
         amenities: _amenities.map((a) => a.toMap()).toList(),
         positionX: posX,
         positionY: posY,
-        width: w,
-        height: h,
       );
     } else {
       success = await provider.updateBooth(
@@ -190,13 +165,10 @@ class _AdminBoothFormScreenState extends State<AdminBoothFormScreen> {
         {
           'boothNumber': _boothNumberController.text.trim(),
           'type': _type,
-          'size': _sizeController.text.trim(),
           'price': double.tryParse(_priceController.text.trim()) ?? 0,
           'amenities': _amenities.map((a) => a.toMap()).toList(),
           'positionX': posX,
           'positionY': posY,
-          'width': w,
-          'height': h,
           'status': _status,
           'description': _descriptionController.text.trim(),
         },
@@ -248,8 +220,8 @@ class _AdminBoothFormScreenState extends State<AdminBoothFormScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.chevron_left, color: Color(0xFF185FA5)),
-          onPressed: () => context
-              .go('/admin/exhibitions/${widget.exhibitionId}/booths'),
+          onPressed: () =>
+              context.go('/admin/exhibitions/${widget.exhibitionId}/booths'),
         ),
       ),
       body: Form(
@@ -259,7 +231,7 @@ class _AdminBoothFormScreenState extends State<AdminBoothFormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Booth Details ───────────────────────────────────
+              // ── Booth Details ─────────────────────────────────
               const _SectionHeader(title: 'Booth Details'),
               const SizedBox(height: 10),
               _Card(
@@ -274,11 +246,10 @@ class _AdminBoothFormScreenState extends State<AdminBoothFormScreen> {
                       v == null || v.trim().isEmpty ? 'Required' : null,
                     ),
                     const SizedBox(height: 14),
-                    // Type dropdown
                     DropdownButtonFormField<String>(
                       value: _type,
                       decoration: _dropdownDecoration('Type'),
-                      items: ['standard', 'premium', 'corner', 'island']
+                      items: _types
                           .map((t) => DropdownMenuItem(
                         value: t,
                         child: Text(
@@ -286,15 +257,6 @@ class _AdminBoothFormScreenState extends State<AdminBoothFormScreen> {
                       ))
                           .toList(),
                       onChanged: (v) => setState(() => _type = v!),
-                    ),
-                    const SizedBox(height: 14),
-                    _Field(
-                      controller: _sizeController,
-                      label: 'Size',
-                      hint: 'e.g. 3x3m',
-                      icon: Icons.straighten,
-                      validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Required' : null,
                     ),
                     const SizedBox(height: 14),
                     _Field(
@@ -339,65 +301,37 @@ class _AdminBoothFormScreenState extends State<AdminBoothFormScreen> {
               ),
               const SizedBox(height: 20),
 
-              // ── Position & Size ─────────────────────────────────
-              const _SectionHeader(title: 'Floor Plan Position & Size'),
+              // ── Floor Plan Position ───────────────────────────
+              const _SectionHeader(title: 'Floor Plan Position'),
               const SizedBox(height: 10),
               _Card(
-                child: Column(
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _Field(
-                            controller: _positionXController,
-                            label: 'Position X',
-                            hint: '0',
-                            icon: Icons.swap_horiz,
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _Field(
-                            controller: _positionYController,
-                            label: 'Position Y',
-                            hint: '0',
-                            icon: Icons.swap_vert,
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                      ],
+                    Expanded(
+                      child: _Field(
+                        controller: _positionXController,
+                        label: 'Position X',
+                        hint: '0',
+                        icon: Icons.swap_horiz,
+                        keyboardType: TextInputType.number,
+                      ),
                     ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _Field(
-                            controller: _widthController,
-                            label: 'Width (px)',
-                            hint: '50',
-                            icon: Icons.width_normal,
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _Field(
-                            controller: _heightController,
-                            label: 'Height (px)',
-                            hint: '50',
-                            icon: Icons.height,
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _Field(
+                        controller: _positionYController,
+                        label: 'Position Y',
+                        hint: '0',
+                        icon: Icons.swap_vert,
+                        keyboardType: TextInputType.number,
+                      ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
 
-              // ── Amenities ───────────────────────────────────────
+              // ── Amenities ─────────────────────────────────────
               const _SectionHeader(title: 'Amenities'),
               const SizedBox(height: 4),
               const Text(
@@ -409,7 +343,6 @@ class _AdminBoothFormScreenState extends State<AdminBoothFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Input row
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -456,7 +389,6 @@ class _AdminBoothFormScreenState extends State<AdminBoothFormScreen> {
                       const SizedBox(height: 14),
                       const Divider(color: Color(0xFFDEE2E6), height: 1),
                       const SizedBox(height: 10),
-                      // Amenity list
                       ..._amenities.asMap().entries.map((entry) {
                         final index = entry.key;
                         final amenity = entry.value;
@@ -467,8 +399,8 @@ class _AdminBoothFormScreenState extends State<AdminBoothFormScreen> {
                           decoration: BoxDecoration(
                             color: const Color(0xFFF8F9FA),
                             borderRadius: BorderRadius.circular(8),
-                            border:
-                            Border.all(color: const Color(0xFFDEE2E6)),
+                            border: Border.all(
+                                color: const Color(0xFFDEE2E6)),
                           ),
                           child: Row(
                             children: [
@@ -504,7 +436,6 @@ class _AdminBoothFormScreenState extends State<AdminBoothFormScreen> {
                         );
                       }),
                       const SizedBox(height: 4),
-                      // Total amenity price
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -536,7 +467,7 @@ class _AdminBoothFormScreenState extends State<AdminBoothFormScreen> {
               ),
               const SizedBox(height: 32),
 
-              // ── Save Button ─────────────────────────────────────
+              // ── Save Button ───────────────────────────────────
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -573,6 +504,10 @@ class _AdminBoothFormScreenState extends State<AdminBoothFormScreen> {
         ),
       ),
     );
+  }
+
+  void _removeAmenity(int index) {
+    setState(() => _amenities.removeAt(index));
   }
 
   InputDecoration _dropdownDecoration(String label) {

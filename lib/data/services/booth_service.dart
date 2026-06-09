@@ -6,18 +6,14 @@ class BoothService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final Uuid _uuid = const Uuid();
 
-  // Create booth
   Future<BoothModel> createBooth({
     required String exhibitionId,
     required String boothNumber,
     required String type,
-    required String size,
     required double price,
     required List<Map<String, dynamic>> amenities,
     required double positionX,
     required double positionY,
-    double width = 50,
-    double height = 50,
   }) async {
     try {
       String id = _uuid.v4();
@@ -26,13 +22,10 @@ class BoothService {
         exhibitionId: exhibitionId,
         boothNumber: boothNumber,
         type: type,
-        size: size,
         price: price,
         amenities: amenities.map((a) => BoothAmenity.fromMap(a)).toList(),
         positionX: positionX,
         positionY: positionY,
-        width: width,
-        height: height,
       );
       await _firestore.collection('booths').doc(id).set(booth.toMap());
       return booth;
@@ -41,7 +34,6 @@ class BoothService {
     }
   }
 
-  // Get booths for an exhibition
   Future<List<BoothModel>> getBoothsByExhibition(String exhibitionId) async {
     try {
       QuerySnapshot snapshot = await _firestore
@@ -57,7 +49,6 @@ class BoothService {
     }
   }
 
-  // Update booth status
   Future<void> updateBoothStatus(String boothId, String status) async {
     try {
       await _firestore
@@ -69,7 +60,6 @@ class BoothService {
     }
   }
 
-  // Update booth
   Future<void> updateBooth(String id, Map<String, dynamic> data) async {
     try {
       await _firestore.collection('booths').doc(id).update(data);
@@ -78,7 +68,6 @@ class BoothService {
     }
   }
 
-  // Delete booth
   Future<void> deleteBooth(String id) async {
     try {
       await _firestore.collection('booths').doc(id).delete();

@@ -82,7 +82,6 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
             exhibitionId: _application.exhibitionId,
             boothNumber: id,
             type: '',
-            size: '',
             price: 0,
           ),
         );

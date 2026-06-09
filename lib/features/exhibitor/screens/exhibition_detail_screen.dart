@@ -276,12 +276,11 @@ class _FloorPlanCanvas extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Compute canvas size from booth positions
     double maxX = 100;
     double maxY = 100;
     for (final b in booths) {
-      final right = b.positionX + b.width;
-      final bottom = b.positionY + b.height;
+      final right = b.positionX + BoothModel.boothDisplaySize;
+      final bottom = b.positionY + BoothModel.boothDisplaySize;
       if (right > maxX) maxX = right;
       if (bottom > maxY) maxY = bottom;
     }
@@ -360,7 +359,6 @@ class _BoothTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _DetailRow(label: 'Type', value: booth.type),
-            _DetailRow(label: 'Size', value: booth.size),
             _DetailRow(
                 label: 'Price',
                 value: 'RM ${booth.price.toStringAsFixed(2)}'),
@@ -372,10 +370,11 @@ class _BoothTile extends StatelessWidget {
             if (booth.amenities.isNotEmpty)
               _DetailRow(
                   label: 'Amenities',
-                  value: booth.amenities.join(', ')),
+                  value: booth.amenities
+                      .map((a) => '${a.name} (RM ${a.price.toStringAsFixed(2)})')
+                      .join(', ')),
             if (booth.description.isNotEmpty)
-              _DetailRow(
-                  label: 'Description', value: booth.description),
+              _DetailRow(label: 'Description', value: booth.description),
           ],
         ),
         actions: [
@@ -437,8 +436,8 @@ class _BoothTile extends StatelessWidget {
         _showBoothDetail(context);
       },
       child: Container(
-        width: booth.width,
-        height: booth.height,
+        width: BoothModel.boothDisplaySize,
+        height: BoothModel.boothDisplaySize,
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(6),

@@ -83,6 +83,7 @@ class _GuestExhibitionDetailScreenState
       case 'available':
         return const Color(0xFF1D9E75);
       case 'booked':
+      case 'reserved':
         return const Color(0xFFDC3545);
       case 'unavailable':
       default:
@@ -382,8 +383,8 @@ class _ReadOnlyFloorPlan extends StatelessWidget {
     double maxX = 100;
     double maxY = 100;
     for (final b in booths) {
-      final right = b.positionX + b.width;
-      final bottom = b.positionY + b.height;
+      final right = b.positionX + BoothModel.boothDisplaySize;
+      final bottom = b.positionY + BoothModel.boothDisplaySize;
       if (right > maxX) maxX = right;
       if (bottom > maxY) maxY = bottom;
     }
@@ -411,8 +412,6 @@ class _ReadOnlyFloorPlan extends StatelessWidget {
                     // Show detail on tap but no selection
                     onTap: () => _showBoothDetail(context, booth),
                     child: Container(
-                      width: booth.width,
-                      height: booth.height,
                       decoration: BoxDecoration(
                         color: boothColor(booth.status),
                         borderRadius: BorderRadius.circular(6),
@@ -462,7 +461,6 @@ class _ReadOnlyFloorPlan extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _DetailRow(label: 'Type', value: booth.type),
-            _DetailRow(label: 'Size', value: booth.size),
             _DetailRow(
                 label: 'Price',
                 value: 'RM ${booth.price.toStringAsFixed(2)}'),
@@ -474,7 +472,9 @@ class _ReadOnlyFloorPlan extends StatelessWidget {
             if (booth.amenities.isNotEmpty)
               _DetailRow(
                   label: 'Amenities',
-                  value: booth.amenities.join(', ')),
+                  value: booth.amenities
+                      .map((a) => '${a.name} (RM ${a.price.toStringAsFixed(2)})')
+                      .join(', ')),
           ],
         ),
         actions: [

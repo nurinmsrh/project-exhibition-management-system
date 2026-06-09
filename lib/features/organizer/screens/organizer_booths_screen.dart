@@ -4,6 +4,7 @@ import '../providers/organizer_provider.dart';
 import '../../../data/models/exhibition_model.dart';
 import '../../../data/models/booth_model.dart';
 import '../organizer_bottom_nav.dart';
+import 'package:go_router/go_router.dart';
 
 class OrganizerBoothsScreen extends StatefulWidget {
   final ExhibitionModel exhibition;
@@ -107,7 +108,7 @@ class _OrganizerBoothsScreenState extends State<OrganizerBoothsScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.chevron_left, color: Color(0xFF185FA5)),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.go('/organizer/exhibitions'),
         ),
         actions: [
           IconButton(
@@ -119,7 +120,8 @@ class _OrganizerBoothsScreenState extends State<OrganizerBoothsScreen> {
       ),
       body: organizer.isLoading
           ? const Center(
-        child: CircularProgressIndicator(color: Color(0xFF185FA5)),
+        child:
+        CircularProgressIndicator(color: Color(0xFF185FA5)),
       )
           : booths.isEmpty
           ? const Center(
@@ -141,12 +143,10 @@ class _OrganizerBoothsScreenState extends State<OrganizerBoothsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Floor Plan ──────────────────────────────
             _FloorPlan(booths: booths),
-
-            // ── Booth List ──────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              padding:
+              const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -190,6 +190,8 @@ class _FloorPlan extends StatelessWidget {
       case 'booked':
       case 'reserved':
         return const Color(0xFFDC3545);
+      case 'unavailable':
+        return const Color(0xFF6C757D);
       default:
         return const Color(0xFF1D9E75);
     }
@@ -200,8 +202,12 @@ class _FloorPlan extends StatelessWidget {
     double maxX = 100;
     double maxY = 100;
     for (final b in booths) {
-      if (b.positionX + b.width > maxX) maxX = b.positionX + b.width;
-      if (b.positionY + b.height > maxY) maxY = b.positionY + b.height;
+      if (b.positionX + BoothModel.boothDisplaySize > maxX) {
+        maxX = b.positionX + BoothModel.boothDisplaySize;
+      }
+      if (b.positionY + BoothModel.boothDisplaySize > maxY) {
+        maxY = b.positionY + BoothModel.boothDisplaySize;
+      }
     }
 
     return Container(
@@ -225,20 +231,20 @@ class _FloorPlan extends StatelessWidget {
               ),
             ),
           ),
-          // Legend
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Wrap(
               spacing: 12,
               runSpacing: 4,
               children: const [
-                _LegendItem(color: Color(0xFF1D9E75), label: 'Available'),
-                _LegendItem(color: Color(0xFFDC3545), label: 'Booked'),
+                _LegendItem(
+                    color: Color(0xFF1D9E75), label: 'Available'),
+                _LegendItem(
+                    color: Color(0xFFDC3545), label: 'Booked'),
               ],
             ),
           ),
           const SizedBox(height: 12),
-          // Canvas
           SizedBox(
             height: 300,
             child: SingleChildScrollView(
@@ -252,21 +258,20 @@ class _FloorPlan extends StatelessWidget {
                       Container(
                         decoration: BoxDecoration(
                           color: const Color(0xFFF8F9FA),
-                          border:
-                          Border.all(color: const Color(0xFFDEE2E6)),
+                          border: Border.all(
+                              color: const Color(0xFFDEE2E6)),
                         ),
                       ),
                       ...booths.map((b) => Positioned(
                         left: b.positionX,
                         top: b.positionY,
                         child: Container(
-                          width: b.width,
-                          height: b.height,
                           decoration: BoxDecoration(
                             color: _boothColor(b.status),
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
-                                color: Colors.white.withOpacity(0.4)),
+                                color:
+                                Colors.white.withOpacity(0.4)),
                           ),
                           child: Center(
                             child: Text(
@@ -391,11 +396,14 @@ class _BoothListTile extends StatelessWidget {
                     icon: Icons.category_outlined, label: booth.type),
                 const SizedBox(width: 8),
                 _InfoChip(
-                    icon: Icons.straighten, label: booth.size),
+                    icon: Icons.attach_money,
+                    label:
+                    'RM ${booth.price.toStringAsFixed(2)}'),
                 const SizedBox(width: 8),
                 _InfoChip(
-                    icon: Icons.attach_money,
-                    label: 'RM ${booth.price.toStringAsFixed(2)}'),
+                    icon: Icons.location_on_outlined,
+                    label:
+                    '(${booth.positionX.toInt()}, ${booth.positionY.toInt()})'),
               ],
             ),
             if (booth.amenities.isNotEmpty) ...[
@@ -430,11 +438,9 @@ class _BoothListTile extends StatelessWidget {
                   onPressed: onEdit,
                   icon: const Icon(Icons.edit_outlined,
                       size: 15, color: Color(0xFF185FA5)),
-                  label: const Text(
-                    'Edit',
-                    style: TextStyle(
-                        fontSize: 13, color: Color(0xFF185FA5)),
-                  ),
+                  label: const Text('Edit',
+                      style: TextStyle(
+                          fontSize: 13, color: Color(0xFF185FA5))),
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 6),
@@ -445,11 +451,9 @@ class _BoothListTile extends StatelessWidget {
                   onPressed: onDelete,
                   icon: const Icon(Icons.delete_outline,
                       size: 15, color: Color(0xFFDC3545)),
-                  label: const Text(
-                    'Delete',
-                    style: TextStyle(
-                        fontSize: 13, color: Color(0xFFDC3545)),
-                  ),
+                  label: const Text('Delete',
+                      style: TextStyle(
+                          fontSize: 13, color: Color(0xFFDC3545))),
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 6),
@@ -487,12 +491,12 @@ class _BoothFormSheetState extends State<_BoothFormSheet> {
   final _amenityNameController = TextEditingController();
   final _amenityPriceController = TextEditingController();
   final List<BoothAmenity> _amenities = [];
-  final List<String> _types = ['Standard', 'Premium'];
-
 
   String _type = 'Standard';
   bool _isSubmitting = false;
   bool get _isEdit => widget.booth != null;
+
+  final List<String> _types = ['Standard', 'Premium'];
 
   @override
   void initState() {
@@ -521,10 +525,36 @@ class _BoothFormSheetState extends State<_BoothFormSheet> {
   void _addAmenity() {
     final name = _amenityNameController.text.trim();
     final price = double.tryParse(_amenityPriceController.text.trim());
-    if (name.isEmpty || price == null || price < 0) return;
-    if (_amenities.any((a) => a.name.toLowerCase() == name.toLowerCase())) {
+
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter an amenity name'),
+          backgroundColor: Color(0xFFDC3545),
+        ),
+      );
       return;
     }
+    if (price == null || price < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid price'),
+          backgroundColor: Color(0xFFDC3545),
+        ),
+      );
+      return;
+    }
+    if (_amenities
+        .any((a) => a.name.toLowerCase() == name.toLowerCase())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Amenity already added'),
+          backgroundColor: Color(0xFFEF9F27),
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _amenities.add(BoothAmenity(name: name, price: price));
       _amenityNameController.clear();
@@ -537,12 +567,33 @@ class _BoothFormSheetState extends State<_BoothFormSheet> {
     setState(() => _isSubmitting = true);
 
     final provider = context.read<OrganizerProvider>();
-    bool success;
 
     final posX =
         double.tryParse(_positionXController.text.trim()) ?? 0;
     final posY =
         double.tryParse(_positionYController.text.trim()) ?? 0;
+
+    // Check position conflict
+    final conflict = provider.booths.any((b) {
+      if (_isEdit && b.id == widget.booth!.id) return false;
+      return b.positionX == posX && b.positionY == posY;
+    });
+
+    if (conflict) {
+      setState(() => _isSubmitting = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'A booth already exists at this position. Please choose different coordinates.'),
+            backgroundColor: Color(0xFFDC3545),
+          ),
+        );
+      }
+      return;
+    }
+
+    bool success;
 
     if (_isEdit) {
       success = await provider.updateBooth(
@@ -550,11 +601,10 @@ class _BoothFormSheetState extends State<_BoothFormSheet> {
         {
           'boothNumber': _numberController.text.trim(),
           'type': _type,
-          'size': '20',
           'price': double.tryParse(_priceController.text.trim()) ?? 0,
+          'amenities': _amenities.map((a) => a.toMap()).toList(),
           'positionX': posX,
           'positionY': posY,
-          'amenities': _amenities.map((a) => a.toMap()).toList(),
         },
         widget.exhibitionId,
       );
@@ -563,7 +613,6 @@ class _BoothFormSheetState extends State<_BoothFormSheet> {
         exhibitionId: widget.exhibitionId,
         boothNumber: _numberController.text.trim(),
         type: _type,
-        size: '20',
         price: double.tryParse(_priceController.text.trim()) ?? 0,
         amenities: _amenities.map((a) => a.toMap()).toList(),
         positionX: posX,
@@ -636,19 +685,14 @@ class _BoothFormSheetState extends State<_BoothFormSheet> {
               ),
               const SizedBox(height: 12),
 
-              // Type & Size row
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _label('Type *'),
-                          const SizedBox(height: 6),
-                          _dropdown(
-                            value: _type,
-                            items: _types,
-                            onChanged: (v) => setState(() => _type = v!),
-                          ),
-                        ],
-                      ),
+              // Type
+              _label('Type *'),
+              const SizedBox(height: 6),
+              _dropdown(
+                value: _type,
+                items: _types,
+                onChanged: (v) => setState(() => _type = v!),
+              ),
               const SizedBox(height: 12),
 
               // Price
@@ -670,8 +714,8 @@ class _BoothFormSheetState extends State<_BoothFormSheet> {
               ),
               const SizedBox(height: 12),
 
-              // Position & Size
-              _label('Position '),
+              // Position
+              _label('Position'),
               const SizedBox(height: 6),
               Row(
                 children: [
@@ -690,7 +734,6 @@ class _BoothFormSheetState extends State<_BoothFormSheet> {
                       keyboardType: TextInputType.number,
                     ),
                   ),
-                  const SizedBox(width: 8),
                 ],
               ),
               const SizedBox(height: 12),
@@ -745,8 +788,8 @@ class _BoothFormSheetState extends State<_BoothFormSheet> {
                     decoration: BoxDecoration(
                       color: const Color(0xFFF8F9FA),
                       borderRadius: BorderRadius.circular(8),
-                      border:
-                      Border.all(color: const Color(0xFFDEE2E6)),
+                      border: Border.all(
+                          color: const Color(0xFFDEE2E6)),
                     ),
                     child: Row(
                       children: [
@@ -838,8 +881,8 @@ class _BoothFormSheetState extends State<_BoothFormSheet> {
         validator: validator,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle:
-          const TextStyle(color: Color(0xFF6C757D), fontSize: 13),
+          hintStyle: const TextStyle(
+              color: Color(0xFF6C757D), fontSize: 13),
           filled: true,
           fillColor: const Color(0xFFF8F9FA),
           border: OutlineInputBorder(

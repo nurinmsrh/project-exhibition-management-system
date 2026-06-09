@@ -686,15 +686,6 @@ class _AdminBoothsScreenState extends State<AdminBoothsScreen> {
                     ),
                     SizedBox(width: 8),
 
-                    SizedBox(
-                      width: 48,
-                      child: Text(
-                        'Size',
-                        style: _headerStyle,
-                      ),
-                    ),
-                    SizedBox(width: 8),
-
                     Expanded(
                       child: Text(
                         'XY Cords',
@@ -791,17 +782,6 @@ class _AdminBoothsScreenState extends State<AdminBoothsScreen> {
                     fontWeight: FontWeight.w600,
                     color: _boothStatusColor(booth.status),
                   ),
-                ),
-              ),
-
-              const SizedBox(width: 8),
-
-              // Size
-              SizedBox(
-                width: 48,
-                child: Text(
-                  booth.size,
-                  style: const TextStyle(fontSize: 11),
                 ),
               ),
 

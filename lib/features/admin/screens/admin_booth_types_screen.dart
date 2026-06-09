@@ -369,7 +369,6 @@ class _AdminBoothTypesScreenState
     final isPublished =
     booths.any((b) => b.isPublished);
     final price = booths.isNotEmpty ? booths.first.price : 0.0;
-    final size = booths.isNotEmpty ? booths.first.size : '';
     final description =
     booths.isNotEmpty ? booths.first.description : '';
     final typeColor = _typeColor(type);
@@ -409,14 +408,6 @@ class _AdminBoothTypesScreenState
               ],
             ),
             const SizedBox(height: 6),
-
-            // Row 2: size
-            Text(
-              'Size: $size',
-              style: const TextStyle(
-                  fontSize: 12, color: Color(0xFF6C757D)),
-            ),
-            const SizedBox(height: 3),
 
             // Row 3: price
             Text(

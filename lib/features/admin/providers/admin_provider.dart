@@ -206,26 +206,20 @@ class AdminProvider extends ChangeNotifier {
     required String exhibitionId,
     required String boothNumber,
     required String type,
-    required String size,
     required double price,
     required List<Map<String, dynamic>> amenities,
     required double positionX,
     required double positionY,
-    double width = 50,
-    double height = 50,
   }) async {
     try {
       await _boothService.createBooth(
         exhibitionId: exhibitionId,
         boothNumber: boothNumber,
         type: type,
-        size: size,
         price: price,
         amenities: amenities,
         positionX: positionX,
         positionY: positionY,
-        width: width,
-        height: height,
       );
       await loadBooths(exhibitionId);
       return true;
