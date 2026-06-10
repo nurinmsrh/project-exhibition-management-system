@@ -152,7 +152,7 @@ class _OrganizerApplicationsScreenState
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Yes, Cancel',
-                style: TextStyle(color: Color(0xFFEF9F27))),
+                style: TextStyle(color: Color(0xFFDC3545))),
           ),
         ],
       ),
