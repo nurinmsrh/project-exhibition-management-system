@@ -48,7 +48,7 @@ class AuthService {
     }
   }
 
-  // Login
+// Login
   Future<UserModel?> login({
     required String email,
     required String password,
@@ -59,8 +59,20 @@ class AuthService {
         password: password,
       );
       return await getUserData(_auth.currentUser!.uid);
-    } catch (e) {
-      rethrow;
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'user-not-found':
+        case 'wrong-password':
+        case 'invalid-credential':
+        case 'invalid-email':
+          throw Exception('Incorrect email or password. Please try again.');
+        case 'user-disabled':
+          throw Exception('This account has been disabled. Contact support.');
+        case 'too-many-requests':
+          throw Exception('Too many failed attempts. Please try again later.');
+        default:
+          throw Exception('Incorrect email or password. Please try again.');
+      }
     }
   }
 

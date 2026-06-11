@@ -81,8 +81,8 @@ class AuthProvider extends ChangeNotifier {
       );
 
       if (credential == null) {
-        _errorMessage = 'Login failed. Please try again.';
         _isLoading = false;
+        _errorMessage = 'Login failed. Please try again.';
         notifyListeners();
         return false;
       }
@@ -94,6 +94,7 @@ class AuthProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       _isLoading = false;
+      _currentUser = null;
       _errorMessage = e.toString().replaceAll('Exception: ', '');
       notifyListeners();
       return false;
